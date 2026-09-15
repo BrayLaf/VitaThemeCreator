@@ -1,10 +1,15 @@
 /**
- * Live home-screen preview for the currently selected page (1-10). Wave
- * pattern art is a procedural stand-in (see data/wavePattern.ts) — the real
- * pattern is firmware-drawn and only its numeric index (§5 <m_bgParam>) is
- * actually stored. Icon tiles reflect the real per-slot background choice
- * (icons.ts §4) with a glyph overlay standing in for the composited overlay
- * art `compositeSystemIcon` produces at build time.
+ * Live home-screen preview for the currently selected page (1-10). The wave
+ * pattern is the page's actual background whenever no image is set — the
+ * Vita firmware draws it itself (and during page-swipe transitions), it is
+ * never composited on top of a real background image (§5 <m_bgParam>,
+ * `ThemeBUILDER/assets/waves.png` — every one of the 31 indices is the same
+ * shape, just a different color; see data/wavePattern.ts). Only the numeric
+ * wave index is actually stored — the art itself is a procedural stand-in,
+ * since no reference art ships with this project. Icon tiles (`IconTile`)
+ * render the real bundled background-swatch/glyph-overlay PNGs the same way
+ * `compositeSystemIcon` composites them at build time, not a flat color +
+ * generic glyph standing in for them.
  *
  * Status bar content/order (icon cluster ending in the clock, right-
  * aligned, nothing on the left) mirrors Theme.py:2208's own preview draw
@@ -19,20 +24,29 @@
  * itself, not the legacy tool), not a bottom dot bar.
  *
  * Icon layout: the Vita's LiveArea packs icons as circular "bubbles" in a
- * honeycomb pattern — rows of alternating length (3/4/3/4/3, centered, so
- * the shorter rows nest between the wider ones), not a rectangular grid.
- * 3+4+3+4+3 = 17, matching the fixed icon-slot count exactly.
+ * honeycomb pattern — rows of alternating length 3/4/3 (centered, so the
+ * shorter rows nest between the wider ones), not a rectangular grid. A real
+ * LiveArea page holds at most 10 bubbles this way (3+4+3) — it never grows
+ * a 4th or 5th row to fit more.
+ *
+ * DECISION (2026-09-14): this preview isn't simulating which of the 17
+ * system icons a real device would place on which page — that's
+ * install-order-dependent and nothing this app's data model tracks. Its
+ * job is just to show what a page's background/wave/text-color looks like
+ * with icons sitting on top of it, capped at the real 10-icon/3-4-3 layout
+ * limit — so the same first-10 icon slots render on every page, every time.
  */
 import { ICON_SLOT_KEYS, type IconSlotKey, type PageIndex, type ThemeProject } from '@shared/types'
-import { ICON_GLYPHS, ICON_LABELS, iconTileBackground } from '../../data/icons'
-import { wavePatternBackground } from '../../data/wavePattern'
+import { ICON_LABELS } from '../../data/icons'
+import { waveTileColor, wavePatternBackground } from '../../data/wavePattern'
 import { withAlpha, toFileUrl } from '../../lib/uiHelpers'
+import { IconTile } from '../common/IconTile'
 
 const PAGE_INDICES: PageIndex[] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
-const ICON_ROW_SIZES = [3, 4, 3, 4, 3] as const
+const ICON_ROW_SIZES = [3, 4, 3] as const
 
-const ICON_ROWS: IconSlotKey[][] = (() => {
+const PREVIEW_ICON_ROWS: readonly IconSlotKey[][] = (() => {
   const rows: IconSlotKey[][] = []
   let cursor = 0
   for (const size of ICON_ROW_SIZES) {
@@ -81,30 +95,26 @@ export function HomePreview({
         {bgPath ? (
           <img className="preview-bg-image" src={toFileUrl(bgPath)} alt="" />
         ) : (
-          // No caption here (unlike the lockscreen placeholder) — the icon
-          // grid covers most of this area, and text underneath it would
-          // bleed through the transparent gaps between icon labels.
-          <div className="preview-bg-placeholder" />
-        )}
-        {bgPath && (
+          // No background image set for this page — the Vita firmware
+          // itself draws the page's m_waveType pattern in that case (§5),
+          // it is NOT a decorative layer drawn on top of a real background.
           <div
             className="preview-wave-layer"
             style={{
-              backgroundImage: wavePatternBackground(page.colors.waveType, 'rgba(255,255,255,.22)')
+              backgroundColor: waveTileColor(page.colors.waveType),
+              backgroundImage: wavePatternBackground()
             }}
           />
         )}
         {showIcons && (
           <div className="preview-icon-grid">
-            {ICON_ROWS.map((row, rowIndex) => (
+            {PREVIEW_ICON_ROWS.map((row, rowIndex) => (
               <div key={rowIndex} className="preview-icon-row">
                 {row.map((slot) => {
                   const choice = project.iconSet[slot]
                   return (
                     <div key={slot} className="preview-icon-cell">
-                      <div className="preview-icon-tile" style={iconTileBackground(choice)}>
-                        {ICON_GLYPHS[slot]}
-                      </div>
+                      <IconTile slot={slot} choice={choice} className="preview-icon-tile" />
                       <div
                         className="preview-icon-label"
                         style={{

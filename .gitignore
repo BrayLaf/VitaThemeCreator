@@ -4,3 +4,12 @@ out
 .DS_Store
 .eslintcache
 *.log*
+
+# Build/export output — the app's own default `buildThemeFolder`/`packageTheme`
+# destinations (ExportPanel.tsx), plus the standalone icon-set creator's
+# `generateIconSet` destination (IconSetCreatorPage.tsx), created relative to
+# the launch directory. User-generated theme output, never source — never
+# commit it.
+/Created Themes/
+/Exported/
+/Icon Sets/

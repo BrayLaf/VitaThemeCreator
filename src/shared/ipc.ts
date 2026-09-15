@@ -10,10 +10,13 @@
  */
 import type {
   AudioSourceConfig,
+  ClockSettings,
+  CreatedThemeSummary,
   ExportResult,
   IconGenerationChoice,
   IconSetSelection,
   IconSlotKey,
+  InfoBarColorSettings,
   PackageThumbnailMode,
   PackageThumbnailSources,
   PreviewScreenshotSource,
@@ -44,6 +47,12 @@ export interface ThemeBuilderApi {
     sourceImagePath: string | null,
     outputPath: string
   ): Promise<string>
+  generateLockscreenPreviewScreenshot(
+    lockscreenImagePath: string,
+    clock: ClockSettings,
+    infoBarColors: InfoBarColorSettings,
+    outputPath: string
+  ): Promise<string>
 
   // iconGeneration.ts
   compositeSystemIcon(
@@ -68,11 +77,22 @@ export interface ThemeBuilderApi {
   loadThemeProject(projectFilePath: string): Promise<ThemeProject>
   saveThemeProject(project: ThemeProject, projectFilePath: string): Promise<void>
 
+  // themeLibrary.ts — the "Manage created themes" landing-page view
+  listCreatedThemes(buildRootDir: string): Promise<CreatedThemeSummary[]>
+  deleteCreatedTheme(buildFolderPath: string): Promise<void>
+
   // dialogs.ts
   pickImageFile(): Promise<string | null>
   pickAudioFile(): Promise<string | null>
   pickProjectOpenPath(): Promise<string | null>
   pickProjectSavePath(defaultName: string): Promise<string | null>
+  revealFile(path: string): Promise<void>
+
+  // resourcePaths.ts — lets the renderer preview the real bundled
+  // icon-glyph/background-swatch art (resources/themebuilder-assets/)
+  // instead of an approximation; segments join the same way
+  // themebuilderAssetPath does, e.g. ['iconBuilder', 'Colors', 'Blue.png'].
+  resolveThemebuilderAssetPath(segments: string[]): Promise<string>
 }
 
 /**
@@ -86,6 +106,7 @@ export const IPC_CHANNELS: Record<keyof ThemeBuilderApi, string> = {
   convertNotificationIcon: 'image:convertNotificationIcon',
   generatePackageThumbnail: 'image:generatePackageThumbnail',
   generatePreviewScreenshot: 'image:generatePreviewScreenshot',
+  generateLockscreenPreviewScreenshot: 'image:generateLockscreenPreviewScreenshot',
   compositeSystemIcon: 'icon:compositeSystemIcon',
   generateIconSet: 'icon:generateIconSet',
   convertAudioTrack: 'audio:convertAudioTrack',
@@ -95,8 +116,12 @@ export const IPC_CHANNELS: Record<keyof ThemeBuilderApi, string> = {
   packageTheme: 'packaging:packageTheme',
   loadThemeProject: 'project:loadThemeProject',
   saveThemeProject: 'project:saveThemeProject',
+  listCreatedThemes: 'library:listCreatedThemes',
+  deleteCreatedTheme: 'library:deleteCreatedTheme',
   pickImageFile: 'dialog:pickImageFile',
   pickAudioFile: 'dialog:pickAudioFile',
   pickProjectOpenPath: 'dialog:pickProjectOpenPath',
-  pickProjectSavePath: 'dialog:pickProjectSavePath'
+  pickProjectSavePath: 'dialog:pickProjectSavePath',
+  revealFile: 'dialog:revealFile',
+  resolveThemebuilderAssetPath: 'resources:resolveThemebuilderAssetPath'
 }

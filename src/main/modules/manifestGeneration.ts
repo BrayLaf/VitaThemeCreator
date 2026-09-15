@@ -57,13 +57,19 @@ export function generateManifest(project: ThemeProject): ThemeManifest {
     ICON_SLOT_KEYS.map((slot) => [ICON_SLOT_TO_MANIFEST_TAG[slot], { iconFilePath: `${slot}.png` }])
   ) as ManifestIconBlocks
 
-  const bgParam = project.pages.map((page, index) => ({
-    thumbnailFilePath: `bg${index + 1}t.png`,
-    imageFilePath: `bg${index + 1}.png`,
-    waveType: page.colors.waveType,
-    fontColor: toManifestColor(page.colors.fontColor),
-    fontShadow: page.colors.fontShadow ? ('1' as const) : ('0' as const)
-  })) as ThemeManifest['homeProperty']['bgParam']
+  // A page with no background image set gets no bgN.png/bgNt.png (packaging.ts) —
+  // the manifest must not reference files that don't exist (see the
+  // `ManifestBackgroundParam` DECISION note), so omit both paths for it.
+  const bgParam = project.pages.map((page, index) => {
+    const hasImage = page.images.main.sourcePath !== null
+    return {
+      thumbnailFilePath: hasImage ? `bg${index + 1}t.png` : null,
+      imageFilePath: hasImage ? `bg${index + 1}.png` : null,
+      waveType: page.colors.waveType,
+      fontColor: toManifestColor(page.colors.fontColor),
+      fontShadow: page.colors.fontShadow ? ('1' as const) : ('0' as const)
+    }
+  }) as ThemeManifest['homeProperty']['bgParam']
 
   if (bgParam.length !== PAGE_COUNT) {
     throw new Error(`expected ${PAGE_COUNT} pages, got ${bgParam.length}`)
@@ -152,8 +158,8 @@ export function serializeManifestXml(manifest: ThemeManifest): string {
   const home = doc.ele('HomeProperty')
   for (const page of manifest.homeProperty.bgParam) {
     const bg = home.ele('m_bgParam').ele('BackgroundParam')
-    bg.ele('m_thumbnailFilePath').txt(page.thumbnailFilePath)
-    bg.ele('m_imageFilePath').txt(page.imageFilePath)
+    if (page.thumbnailFilePath) bg.ele('m_thumbnailFilePath').txt(page.thumbnailFilePath)
+    if (page.imageFilePath) bg.ele('m_imageFilePath').txt(page.imageFilePath)
     bg.ele('m_waveType').txt(String(page.waveType))
     bg.ele('m_fontColor').txt(page.fontColor)
     bg.ele('m_fontShadow').txt(page.fontShadow)

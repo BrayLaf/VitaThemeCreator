@@ -15,14 +15,18 @@ export function withAlpha(hex: string, alpha: number): string {
 }
 
 /**
- * An absolute filesystem path -> a `file://` URL an `<img>`/`<audio>` can
- * load. The renderer has no Node `url` module (context isolation, no node
- * integration), so this is done by hand.
+ * An absolute filesystem path -> a `themefile://` URL an `<img>`/`<audio>`
+ * can load. Plain `file://` URLs get silently refused by Chromium when the
+ * page itself isn't loaded from `file://` (true in dev, where the renderer
+ * is served from `ELECTRON_RENDERER_URL`), so main registers `themefile:`
+ * as a privileged scheme and serves it via `protocol.handle` instead — see
+ * `src/main/index.ts`. The renderer has no Node `url` module (context
+ * isolation, no node integration), so this is done by hand.
  */
 export function toFileUrl(path: string): string {
   const normalized = path.replace(/\\/g, '/')
   const withLeadingSlash = normalized.startsWith('/') ? normalized : `/${normalized}`
-  return `file://${encodeURI(withLeadingSlash)}`
+  return `themefile://local/?p=${encodeURIComponent(withLeadingSlash)}`
 }
 
 export function basename(path: string): string {
@@ -33,4 +37,15 @@ export function basename(path: string): string {
 /** A dropped `File`'s real filesystem path — an Electron-specific extension. */
 export function droppedFilePath(file: File): string | null {
   return (file as File & { path?: string }).path ?? null
+}
+
+/**
+ * Electron's IPC layer wraps every rejected `ipcMain.handle` error as
+ * `Error invoking remote method '<channel>': Error: <message>` — strip that
+ * so a shown notice carries the actual failure, not the transport wrapper.
+ */
+export function cleanIpcErrorMessage(error: unknown): string {
+  const raw = error instanceof Error ? error.message : String(error)
+  const match = /Error invoking remote method '[^']+':\s*(?:Error:\s*)?(.*)/s.exec(raw)
+  return (match?.[1] ?? raw).trim()
 }

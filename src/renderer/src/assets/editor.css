@@ -1,4 +1,7 @@
-.editor-shell {
+/* Design tokens live on :root (not just .editor-shell) so the landing page,
+   icon-set creator, and manage-themes screens — which sit alongside
+   .editor-shell, not inside it — can use them too. */
+:root {
   --accent: #7a9dff;
   --bg-app: #0a0b0e;
   --bg-topbar: #0d0f13;
@@ -18,7 +21,11 @@
   --radius-md: 11px;
   --radius-sm: 8px;
   --mono: ui-monospace, 'SF Mono', 'Cascadia Code', Consolas, monospace;
+}
 
+.editor-shell,
+.landing,
+.library {
   display: flex;
   flex-direction: column;
   height: 100vh;
@@ -142,6 +149,21 @@
   border: none;
   box-shadow: 0 6px 18px rgba(122, 157, 255, 0.3);
   font-size: 12.5px;
+}
+
+.topbar-button-danger {
+  padding: 7px 12px;
+  border-radius: var(--radius-sm);
+  background: rgba(235, 87, 87, 0.14);
+  box-shadow: inset 0 0 0 1px rgba(235, 87, 87, 0.4);
+  color: #ff9b9b;
+  cursor: pointer;
+  border: none;
+  font-size: 12.5px;
+}
+
+.topbar-button-danger:hover {
+  background: rgba(235, 87, 87, 0.22);
 }
 
 /* ------------------------------------------------------------------ body */
@@ -276,6 +298,57 @@
   color: var(--text-2);
   margin-top: 10px;
   word-break: break-all;
+}
+
+.export-notice {
+  margin-top: 10px;
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.export-notice-success {
+  background: rgba(58, 214, 120, 0.12);
+  box-shadow: inset 0 0 0 1px rgba(58, 214, 120, 0.35);
+  color: #7be8a8;
+}
+
+.export-notice-error {
+  background: rgba(235, 87, 87, 0.12);
+  box-shadow: inset 0 0 0 1px rgba(235, 87, 87, 0.4);
+  color: #ff9b9b;
+}
+
+.export-notice-title {
+  font-weight: 700;
+  color: #ffb3b3;
+  margin-bottom: 4px;
+}
+
+.export-notice-message {
+  color: #ff9b9b;
+  font-family: var(--mono);
+  font-size: 12px;
+}
+
+.export-notice-link {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  font-family: var(--mono);
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+  word-break: break-all;
+}
+
+.export-notice-link:hover {
+  color: #fff;
 }
 
 .two-col {
@@ -533,6 +606,8 @@
 }
 
 .icon-chip-tile {
+  position: relative;
+  overflow: hidden;
   width: 42px;
   height: 42px;
   border-radius: 11px;
@@ -540,6 +615,15 @@
   place-items: center;
   font-size: 18px;
   color: #fff;
+}
+
+/* Background-swatch and glyph-overlay layers stacked inside an IconTile — see components/common/IconTile.tsx. */
+.icon-tile-layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .icon-editor {
@@ -832,14 +916,15 @@
 
 .preview-clock-time {
   font-size: 5.6cqw;
-  font-weight: 300;
+  font-weight: 650;
   line-height: 1;
-  letter-spacing: -0.1cqw;
+  letter-spacing: -0.05cqw;
   text-shadow: 0 2px 18px rgba(0, 0, 0, 0.55);
 }
 
 .preview-clock-date {
   font-size: 1.35cqw;
+  font-weight: 500;
   letter-spacing: 0.06cqw;
   opacity: 0.82;
   text-shadow: 0 1px 10px rgba(0, 0, 0, 0.6);
@@ -898,6 +983,23 @@
  * Theme.py's own preview never draws a "slide to unlock" label since
  * there's no themeable content there to show.
  */
+/*
+ * The legacy tool's own preview-only bezel/page-lip chrome
+ * (assets/preview/default/overlay.png, 390×221 — the same aspect ratio as
+ * this 960×544 preview, so `fill` maps it 1:1 with no distortion). It is
+ * not part of the real device lockscreen, only of ThemeBUILDER's own
+ * preview window (and the exported preview_lockscreen.png, which is a
+ * screen-grab of that same window) — see LockscreenPreview.tsx doc comment.
+ */
+.preview-lockscreen-overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+  pointer-events: none;
+}
+
 .preview-unlock-handle {
   position: absolute;
   left: 50%;
@@ -965,30 +1067,33 @@
   padding: 2.3cqw 3.5cqw 0.8cqw;
   display: flex;
   flex-direction: column;
-  gap: 1.5cqw;
+  justify-content: center;
+  gap: 2.2cqw;
 }
 
 .preview-icon-row {
   display: flex;
   justify-content: center;
-  gap: 2.7cqw;
+  gap: 3.4cqw;
 }
 
 .preview-icon-cell {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.65cqw;
+  gap: 0.8cqw;
   min-width: 0;
 }
 
 .preview-icon-tile {
-  width: 5cqw;
-  height: 5cqw;
+  position: relative;
+  overflow: hidden;
+  width: 9cqw;
+  height: 9cqw;
   border-radius: 50%;
   display: grid;
   place-items: center;
-  font-size: 2.1cqw;
+  font-size: 3.6cqw;
   color: #fff;
   box-shadow:
     0 6px 14px rgba(0, 0, 0, 0.35),
@@ -996,7 +1101,7 @@
 }
 
 .preview-icon-label {
-  font-size: max(8.5px, 1cqw);
+  font-size: max(9px, 1.3cqw);
   white-space: nowrap;
 }
 
@@ -1027,4 +1132,171 @@
   transition:
     background 0.18s ease,
     transform 0.18s ease;
+}
+
+/* -------------------------------------------------------------- landing */
+
+.landing {
+  align-items: center;
+  justify-content: center;
+  padding: 40px 24px;
+  overflow-y: auto;
+}
+
+.landing-mark {
+  width: 44px;
+  height: 44px;
+  flex: none;
+  border-radius: 14px;
+  background: linear-gradient(140deg, var(--accent), #4b62c9);
+  box-shadow: 0 0 28px rgba(122, 157, 255, 0.4);
+  margin-bottom: 18px;
+}
+
+.landing-title {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  margin-bottom: 8px;
+}
+
+.landing-subtitle {
+  font-size: 14px;
+  color: var(--text-4);
+  max-width: 480px;
+  text-align: center;
+  line-height: 1.6;
+  margin-bottom: 36px;
+}
+
+.landing-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(220px, 260px));
+  gap: 16px;
+}
+
+.landing-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 22px 20px;
+  border-radius: var(--radius-lg);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-1);
+  cursor: pointer;
+  text-align: left;
+  transition:
+    border-color 0.15s ease,
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.landing-card:hover {
+  border-color: rgba(122, 157, 255, 0.4);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  transform: translateY(-1px);
+}
+
+.landing-card-glyph {
+  font-size: 22px;
+  color: var(--accent);
+}
+
+.landing-card-title {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.landing-card-desc {
+  font-size: 12.5px;
+  color: var(--text-4);
+  line-height: 1.5;
+}
+
+.landing-status {
+  margin-top: 24px;
+  max-width: 480px;
+}
+
+/* -------------------------------------------------------------- library */
+
+.library-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 26px 32px 44px;
+}
+
+.library-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 16px;
+}
+
+.library-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  border-radius: var(--radius-lg);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+}
+
+.library-card-thumb {
+  width: 100%;
+  aspect-ratio: 480 / 272;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--bg-surface-2);
+}
+
+.library-card-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.library-card-thumb-placeholder {
+  width: 100%;
+  height: 100%;
+  background: repeating-linear-gradient(45deg, #181b21 0 8px, #14171d 8px 16px);
+}
+
+.library-card-name {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.library-card-meta {
+  font-size: 11.5px;
+  color: var(--text-4);
+}
+
+.library-card-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+/* ------------------------------------------------------ single-pane body */
+
+/* Layout for pages that are one scrollable panel with no side rail/preview
+   (IconSetCreatorPage) — reuses .editor-shell/.topbar chrome without the
+   three-column .editor-body split. */
+.single-pane-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  justify-content: center;
+  padding: 26px 26px 44px;
+}
+
+.single-pane-body .panel {
+  width: 100%;
+  max-width: 640px;
 }

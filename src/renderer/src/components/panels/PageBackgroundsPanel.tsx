@@ -12,7 +12,7 @@ import { useThemeProject } from '../../state/useThemeProject'
 import { FileDropzone } from '../common/FileDropzone'
 import { ColorSwatchRow } from '../common/ColorSwatchRow'
 import { PAGE_TEXT_PRESETS } from '../../data/colorPresets'
-import { WAVE_PATTERN_COUNT, wavePatternBackground } from '../../data/wavePattern'
+import { WAVE_PATTERN_COUNT, waveTileColor, wavePatternBackground } from '../../data/wavePattern'
 
 const PAGE_INDICES: PageIndex[] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 const WAVE_QUICK_PICKS = Array.from({ length: WAVE_PATTERN_COUNT }, (_, i) => i)
@@ -40,7 +40,9 @@ export function PageBackgroundsPanel({
     <section className="panel">
       <h2>Pages</h2>
       <p className="panel-description">
-        Each of the 10 home pages carries its own background, wave pattern and text color.
+        Each of the 10 home pages carries its own background, wave pattern and text color. The
+        background image is optional — the wave pattern is what the Vita itself draws behind the
+        page (and during page-swipe transitions) when no image is set, not a layer on top of one.
       </p>
 
       <div className="panel-eyebrow">PAGE</div>
@@ -57,10 +59,10 @@ export function PageBackgroundsPanel({
         ))}
       </div>
 
-      <div className="panel-eyebrow">BACKGROUND</div>
+      <div className="panel-eyebrow">BACKGROUND (OPTIONAL)</div>
       <FileDropzone
         label=""
-        hint={`page ${selectedPage} · ${mainSpec.width}×${mainSpec.height}`}
+        hint={`page ${selectedPage} · ${mainSpec.width}×${mainSpec.height} · leave empty to use the wave pattern`}
         kind="image"
         value={page.images.main.sourcePath}
         onChange={(sourcePath) => setPageImage(selectedPage, 'main', { sourcePath })}
@@ -87,7 +89,10 @@ export function PageBackgroundsPanel({
           >
             <div
               className="wave-swatch-fill"
-              style={{ backgroundImage: wavePatternBackground(i, 'rgba(255,255,255,.6)') }}
+              style={{
+                backgroundColor: waveTileColor(i),
+                backgroundImage: wavePatternBackground()
+              }}
             />
             <span>{i}</span>
           </button>

@@ -11,9 +11,15 @@
  * replacement) is `sharp`'s built-in `.png({ palette: true })`, which uses
  * the same libimagequant engine pngquant itself is built on.
  */
-import sharp from 'sharp'
-import { IMAGE_SPECS, type PackageThumbnailSources } from '@shared/types'
-import { MASK_NOT_PATH } from '../resourcePaths'
+import sharp, { type OverlayOptions } from 'sharp'
+import {
+  IMAGE_SPECS,
+  type ClockPosition,
+  type ClockSettings,
+  type InfoBarColorSettings,
+  type PackageThumbnailSources
+} from '@shared/types'
+import { LOCKSCREEN_PREVIEW_OVERLAY_PATH, MASK_NOT_PATH } from '../resourcePaths'
 
 /** Absolute path to a produced PNG file. */
 export type ImageOutputPath = string
@@ -69,9 +75,10 @@ export async function convertPageBackground(
 }
 
 /**
- * Scales to max-height 37px (aspect preserved), centers onto a 40×37
- * transparent canvas, then alpha-masks against mask_not.png via CopyOpacity
- * compose, then pngquant-compresses.
+ * Scales to max-height 110px (aspect preserved), centers onto a 120×110
+ * transparent canvas, then alpha-masks against mask_not.png (upscaled 3×
+ * from its bundled 40×37 — see the `IMAGE_SPECS.notificationIcon` DECISION
+ * comment) via CopyOpacity compose, then pngquant-compresses.
  * Report ref: §2 table row "Notification icon"; Theme.py:1063-1066,
  * 1283-1291, 2649-2650.
  */
@@ -86,6 +93,10 @@ export async function convertNotificationIcon(
     .png()
     .toBuffer()
 
+  const mask = await sharp(MASK_NOT_PATH())
+    .resize(maskDimensions.width, maskDimensions.height, { fit: 'fill' })
+    .toBuffer()
+
   await sharp({
     create: {
       width: maskDimensions.width,
@@ -96,7 +107,7 @@ export async function convertNotificationIcon(
   })
     .composite([
       { input: resized, gravity: 'center' },
-      { input: MASK_NOT_PATH(), blend: 'dest-in' }
+      { input: mask, blend: 'dest-in' }
     ])
     .png({ palette: true })
     .toFile(outputPath)
@@ -105,10 +116,36 @@ export async function convertNotificationIcon(
 }
 
 /**
+ * Escapes text for safe embedding in an SVG `<text>` node.
+ */
+function escapeSvgText(text: string): string {
+  return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+}
+
+/**
+ * Font size for the auto-collage caption, shrinking for longer theme names.
+ * Mirrors the original's own intent (Theme.py:1652-1658 buckets font size
+ * down as the name gets longer so it still fits the 226px-wide canvas) as a
+ * continuous approximation rather than replicating its exact bucket table.
+ */
+function captionFontSize(text: string, captionHeight: number): number {
+  const base = Math.round(captionHeight * 0.62)
+  if (text.length <= 9) return base
+  const shrink = Math.max(0.4, 9 / text.length)
+  return Math.max(Math.round(captionHeight * 0.28), Math.round(base * shrink))
+}
+
+/**
  * Builds preview_thumbnail.png (226×128) — either an auto-generated 4-page
  * collage, a scaled custom image, or a captured live preview.
  * Report ref: §2 table row "Package thumbnail"; Theme.py:1615-1991,
  * `GenerateTHEME_image`, capture at Theme.py:1983-1986.
+ *
+ * The auto-collage's caption band (theme name, centered, on solid black
+ * beneath the 4-tile grid) is confirmed against a real ThemeBUILDER-exported
+ * preview_thumbnail.png — the collage fills roughly the top 76% of the
+ * canvas, leaving a reserved band for the title rather than covering the
+ * full 226×128.
  */
 export async function generatePackageThumbnail(
   mode: 'auto-collage' | 'custom-image' | 'live-capture',
@@ -131,23 +168,49 @@ export async function generatePackageThumbnail(
         'generatePackageThumbnail: auto-collage mode requires exactly 4 collagePageImagePaths'
       )
     }
+    const collageHeight = Math.round(height * 0.76)
+    const captionHeight = height - collageHeight
     const cellWidth = Math.round(width / 2)
-    const cellHeight = Math.round(height / 2)
+    const cellHeight = Math.round(collageHeight / 2)
+    // A page with no background set renders as a flat placeholder tile
+    // (matching the editor's own `.preview-bg-placeholder` neutral tone)
+    // instead of requiring 4 real page images before export can proceed.
     const tiles = await Promise.all(
       sources.collagePageImagePaths.map((path) =>
-        sharp(path).resize(cellWidth, cellHeight, { fit: 'fill' }).toBuffer()
+        path
+          ? sharp(path).resize(cellWidth, cellHeight, { fit: 'fill' }).toBuffer()
+          : sharp({
+              create: { width: cellWidth, height: cellHeight, channels: 4, background: '#20242c' }
+            })
+              .png()
+              .toBuffer()
       )
     )
+
+    const composites: OverlayOptions[] = [
+      { input: tiles[0], left: 0, top: 0 },
+      { input: tiles[1], left: width - cellWidth, top: 0 },
+      { input: tiles[2], left: 0, top: collageHeight - cellHeight },
+      { input: tiles[3], left: width - cellWidth, top: collageHeight - cellHeight }
+    ]
+
+    const themeName = sources.themeName?.trim()
+    if (themeName) {
+      const fontSize = captionFontSize(themeName, captionHeight)
+      const captionSvg = Buffer.from(
+        `<svg width="${width}" height="${captionHeight}" xmlns="http://www.w3.org/2000/svg">
+          <text x="50%" y="50%" text-anchor="middle" dominant-baseline="central"
+            font-family="Helvetica, Arial, sans-serif" font-weight="700"
+            font-size="${fontSize}" fill="#ffffff">${escapeSvgText(themeName)}</text>
+        </svg>`
+      )
+      composites.push({ input: captionSvg, left: 0, top: collageHeight })
+    }
+
     await sharp({
       create: { width, height, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 1 } }
     })
-      .composite([
-        { input: tiles[0], left: 0, top: 0 },
-        { input: tiles[1], left: width - cellWidth, top: 0 },
-        { input: tiles[2], left: 0, top: height - cellHeight },
-        { input: tiles[3], left: width - cellWidth, top: height - cellHeight }
-      ])
-      .resize(width, height, { fit: 'fill' })
+      .composite(composites)
       .png({ palette: true })
       .toFile(outputPath)
     return outputPath
@@ -159,16 +222,21 @@ export async function generatePackageThumbnail(
 }
 
 /**
- * Builds preview_lockscreen.png / preview_page.png (480×272, forced
- * stretch) by downscaling an already-produced source image (the built
- * lockscreen.png, or page 1's background), or captures one from a mounted
- * Vita's screenshot folder.
+ * Builds preview_page.png (480×272, forced stretch) by downscaling page 1's
+ * already-built background, or captures one from a mounted Vita's
+ * screenshot folder. (`preview_lockscreen.png` is NOT built this way — see
+ * `generateLockscreenPreviewScreenshot` below, which bakes in the demo
+ * clock text and page-lip overlay the way the original tool's own
+ * screen-grab-based export actually does.)
  * Report ref: §2 table row "VitaShell live preview screenshots";
  * Theme.py:2293-2296, 1304-1311, 2017-2031.
  *
  * TODO: the mounted-device capture path needs a cross-platform volume
  * detection strategy (e.g. `drivelist`) to replace the original's
- * Windows-only drive-letter scan — see report §8 discard list.
+ * Windows-only drive-letter scan — see report §8 discard list. TODO:
+ * preview_page.png similarly doesn't yet bake in the icons/labels/status
+ * bar the original's own screen-grab includes — a plain background resize
+ * for now.
  */
 export async function generatePreviewScreenshot(
   source: 'generated' | 'captured-from-device',
@@ -185,5 +253,144 @@ export async function generatePreviewScreenshot(
   }
   const { width, height } = IMAGE_SPECS.previewScreenshot.dimensions
   await writeForcedStretchPng(sourceImagePath, width, height, outputPath)
+  return outputPath
+}
+
+/** Escapes text for safe embedding in an SVG `<text>` node. */
+function escapeSvg(text: string): string {
+  return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+}
+
+/**
+ * The demo date/time `preview_lockscreen.png` shows — a static build-time
+ * image, not a live clock, so the original tool always draws the same fixed
+ * "January 1 (Monday)" / "12:00" placeholder regardless of the real date
+ * (Theme.py:2158-2164). See LockscreenPreview.tsx's doc comment for the
+ * live-preview version of this same date-format grounding.
+ */
+const PREVIEW_DEMO_DATE = 'January 1 (Monday)'
+const PREVIEW_DEMO_TIME = '12:00'
+
+/**
+ * Clock text placement for the baked preview, as fractions of the canvas
+ * width (matching the live preview's CSS `cqw` units — see
+ * `LockscreenPreview.tsx`'s `clockAlignStyle`) rather than a fresh
+ * re-derivation of Theme.py's own ambiguous PySimpleGUI draw coordinates
+ * (report's own caveat on `draw_*` anchor semantics). Keeping this in sync
+ * with the live editor preview matters more here than independently
+ * chasing pixel-exact parity with the original — DECISION (2026-09-14).
+ */
+function clockPreviewLayout(
+  position: ClockPosition,
+  width: number
+): { x: number; anchor: 'start' | 'end'; blockTop: number | null; blockBottom: number | null } {
+  const left = width * 0.035
+  const right = width * (1 - 0.035)
+  if (position === 1) return { x: left, anchor: 'start', blockTop: width * 0.07, blockBottom: null }
+  if (position === 2) {
+    return { x: right, anchor: 'end', blockTop: null, blockBottom: width * 0.058 }
+  }
+  return { x: left, anchor: 'start', blockTop: null, blockBottom: width * 0.058 }
+}
+
+function buildClockSvg(
+  width: number,
+  height: number,
+  position: ClockPosition,
+  color: string
+): Buffer {
+  const dateFontSize = width * 0.0135
+  const timeFontSize = width * 0.056
+  const gap = width * 0.002
+  const blockHeight = dateFontSize + gap + timeFontSize
+  const { x, anchor, blockTop, blockBottom } = clockPreviewLayout(position, width)
+  const top = blockTop ?? height - (blockBottom as number) - blockHeight
+  const dateCenterY = top + dateFontSize / 2
+  const timeCenterY = top + dateFontSize + gap + timeFontSize / 2
+
+  return Buffer.from(
+    `<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
+      <text x="${x}" y="${dateCenterY}" text-anchor="${anchor}" dominant-baseline="central"
+        font-family="Helvetica, Arial, sans-serif" font-size="${dateFontSize}" fill="#${color}"
+        opacity="0.85">${escapeSvg(PREVIEW_DEMO_DATE)}</text>
+      <text x="${x}" y="${timeCenterY}" text-anchor="${anchor}" dominant-baseline="central"
+        font-family="Helvetica, Arial, sans-serif" font-weight="650" font-size="${timeFontSize}"
+        fill="#${color}">${escapeSvg(PREVIEW_DEMO_TIME)}</text>
+    </svg>`
+  )
+}
+
+function buildStatusBarSvg(width: number, statusBarHeight: number, color: string): Buffer {
+  const fontSize = statusBarHeight * 0.6
+  return Buffer.from(
+    `<svg width="${width}" height="${statusBarHeight}" xmlns="http://www.w3.org/2000/svg">
+      <text x="${width - width * 0.02}" y="${statusBarHeight / 2}" text-anchor="end"
+        dominant-baseline="central" font-family="Helvetica, Arial, sans-serif"
+        font-size="${fontSize}" fill="#${color}">${escapeSvg(PREVIEW_DEMO_TIME)}</text>
+    </svg>`
+  )
+}
+
+/**
+ * Builds `preview_lockscreen.png` (480×272) the way the original tool
+ * actually produces it: not a plain resize of the lockscreen background, but
+ * a screen-grab of its own live-preview widget (Theme.py:2247) — background
+ * + demo clock text + a status-bar band + the preview-only page-lip/bezel
+ * overlay (`Image_LS_Overlay`, Theme.py:2167; see
+ * `LOCKSCREEN_PREVIEW_OVERLAY_PATH`) all baked in together. The status bar
+ * occupies the top 12/220 of the legacy tool's own 390×220 preview canvas
+ * (Theme.py:2148-2167) — reproduced here as the top 12/220 of this image's
+ * height.
+ * Report ref: §2 table row "VitaShell live preview screenshots";
+ * Theme.py:2148-2167, 2247, 2293.
+ */
+export async function generateLockscreenPreviewScreenshot(
+  lockscreenImagePath: string,
+  clock: ClockSettings,
+  infoBarColors: InfoBarColorSettings,
+  outputPath: string
+): Promise<ImageOutputPath> {
+  const { width, height } = IMAGE_SPECS.previewScreenshot.dimensions
+  const statusBarHeight = Math.round(height * (12 / 220))
+  const backgroundHeight = height - statusBarHeight
+
+  const background = await sharp(lockscreenImagePath)
+    .resize(width, backgroundHeight, { fit: 'fill' })
+    .toBuffer()
+
+  await sharp({
+    create: { width, height, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 1 } }
+  })
+    .composite([
+      { input: background, left: 0, top: statusBarHeight },
+      {
+        input: {
+          create: {
+            width,
+            height: statusBarHeight,
+            channels: 4,
+            background: `#${infoBarColors.barColor}`
+          }
+        },
+        left: 0,
+        top: 0
+      },
+      { input: buildClockSvg(width, height, clock.position, clock.color), left: 0, top: 0 },
+      {
+        input: buildStatusBarSvg(width, statusBarHeight, infoBarColors.indicatorColor),
+        left: 0,
+        top: 0
+      },
+      {
+        input: await sharp(LOCKSCREEN_PREVIEW_OVERLAY_PATH())
+          .resize(width, height, { fit: 'fill' })
+          .toBuffer(),
+        left: 0,
+        top: 0
+      }
+    ])
+    .png({ palette: true })
+    .toFile(outputPath)
+
   return outputPath
 }
