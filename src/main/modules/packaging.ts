@@ -16,7 +16,14 @@ import * as archiver from 'archiver'
 import { createWriteStream } from 'fs'
 import { copyFile, mkdir, readdir, writeFile } from 'fs/promises'
 import { basename, join } from 'path'
-import { ICON_SLOT_KEYS, type ExportResult, type ThemeProject } from '@shared/types'
+import {
+  DEFAULT_IMAGE_CROP,
+  ICON_SLOT_KEYS,
+  type CroppableImageSlot,
+  type ExportResult,
+  type ImageCrop,
+  type ThemeProject
+} from '@shared/types'
 import {
   convertLockscreenImage,
   convertNotificationIcon,
@@ -53,6 +60,11 @@ function requireSourcePath(sourcePath: string | null, label: string): string {
   return sourcePath
 }
 
+/** `null` (forced-stretch) unless the slot both has a source image and opted into crop mode. */
+function cropForSlot(slot: CroppableImageSlot): ImageCrop | null {
+  return slot.sourcePath && slot.fitMode === 'crop' ? slot.crop : null
+}
+
 /**
  * Runs every conversion (images, audio, manifest, icons) and assembles the
  * full build folder layout described in §6. Does not zip.
@@ -67,6 +79,7 @@ export async function buildThemeFolder(
 
   await convertLockscreenImage(
     project.lockscreenImage.sourcePath ?? DEFAULT_LOCKSCREEN_IMAGE_PATH(),
+    cropForSlot(project.lockscreenImage),
     join(buildFolderPath, 'lockscreen.png')
   )
 
@@ -85,23 +98,41 @@ export async function buildThemeFolder(
       builtPageMainPaths.push(null)
       continue
     }
+    const mainCrop = cropForSlot(page.images.main)
+    // No separately chosen thumbnail source falls back to the main image
+    // file — also reuse the main image's crop framing in that case, rather
+    // than the thumbnail slot's own (unrelated, defaulted) crop state.
+    const usingMainAsThumbnail = !page.images.thumbnail.sourcePath
     const thumbnailSource = page.images.thumbnail.sourcePath ?? mainSource
+    const thumbnailCrop = usingMainAsThumbnail ? mainCrop : cropForSlot(page.images.thumbnail)
     const mainOut = join(buildFolderPath, `bg${pageNumber}.png`)
-    await convertPageBackground({ main: mainSource, thumbnail: thumbnailSource }, pageNumber, {
-      main: mainOut,
-      thumbnail: join(buildFolderPath, `bg${pageNumber}t.png`)
-    })
+    await convertPageBackground(
+      { main: mainSource, thumbnail: thumbnailSource },
+      { main: mainCrop, thumbnail: thumbnailCrop },
+      pageNumber,
+      {
+        main: mainOut,
+        thumbnail: join(buildFolderPath, `bg${pageNumber}t.png`)
+      }
+    )
     builtPageMainPaths.push(mainOut)
   }
 
+  // The stored `crop` only applies to a user-chosen source image — the
+  // bundled default asset is already the correct 120×110 frame and must
+  // never be re-cropped by leftover crop state from a prior custom icon.
   await convertNotificationIcon(
     project.notificationIcons.noNotice.sourcePath ?? DEFAULT_NO_NOTICE_ICON_PATH(),
-    'noNotice',
+    project.notificationIcons.noNotice.sourcePath
+      ? project.notificationIcons.noNotice.crop
+      : DEFAULT_IMAGE_CROP,
     join(buildFolderPath, 'notices.png')
   )
   await convertNotificationIcon(
     project.notificationIcons.newNotice.sourcePath ?? DEFAULT_NEW_NOTICE_ICON_PATH(),
-    'newNotice',
+    project.notificationIcons.newNotice.sourcePath
+      ? project.notificationIcons.newNotice.crop
+      : DEFAULT_IMAGE_CROP,
     join(buildFolderPath, 'notice.png')
   )
 

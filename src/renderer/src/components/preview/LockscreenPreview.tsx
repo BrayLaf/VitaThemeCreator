@@ -33,6 +33,7 @@
 import type { CSSProperties } from 'react'
 import type { ClockPosition, ThemeProject } from '@shared/types'
 import { toFileUrl } from '../../lib/uiHelpers'
+import { CroppedImageLayer } from '../common/CroppedImageLayer'
 import lockscreenOverlayUrl from '../../assets/lockscreen-preview-overlay.png'
 
 function clockAlignStyle(position: ClockPosition): CSSProperties {
@@ -58,7 +59,15 @@ export function LockscreenPreview({
   return (
     <div className="preview-lockscreen">
       {lockscreenImage.sourcePath ? (
-        <img className="preview-bg-image" src={toFileUrl(lockscreenImage.sourcePath)} alt="" />
+        lockscreenImage.fitMode === 'crop' ? (
+          <CroppedImageLayer
+            className="preview-bg-image"
+            sourcePath={lockscreenImage.sourcePath}
+            crop={lockscreenImage.crop}
+          />
+        ) : (
+          <img className="preview-bg-image" src={toFileUrl(lockscreenImage.sourcePath)} alt="" />
+        )
       ) : (
         <div className="preview-bg-placeholder">
           <span>LOCKSCREEN IMAGE · 960 × 512</span>

@@ -2,11 +2,12 @@ import { createContext } from 'react'
 import type {
   AudioSourceConfig,
   ClockSettings,
+  CroppableImageSlot,
   IconGenerationChoice,
   IconSlotKey,
-  ImageSourceRef,
   InfoBarColorSettings,
   NotificationColorSettings,
+  NotificationIconImageSlot,
   PackageThumbnailSlot,
   PageColorSettings,
   PageIndex,
@@ -22,14 +23,17 @@ export interface ThemeProjectContextValue {
   setClock: (patch: Partial<ClockSettings>) => void
   setNotificationColors: (patch: Partial<NotificationColorSettings>) => void
   setInfoBarColors: (patch: Partial<InfoBarColorSettings>) => void
-  setLockscreenImage: (patch: Partial<ImageSourceRef>) => void
+  setLockscreenImage: (patch: Partial<CroppableImageSlot>) => void
   setPageColors: (page: PageIndex, patch: Partial<PageColorSettings>) => void
   setPageImage: (
     page: PageIndex,
     slot: 'main' | 'thumbnail',
-    patch: Partial<ImageSourceRef>
+    patch: Partial<CroppableImageSlot>
   ) => void
-  setNotificationIcon: (variant: 'noNotice' | 'newNotice', patch: Partial<ImageSourceRef>) => void
+  setNotificationIcon: (
+    variant: 'noNotice' | 'newNotice',
+    patch: Partial<NotificationIconImageSlot['noNotice']>
+  ) => void
   setIconChoice: (slot: IconSlotKey, choice: IconGenerationChoice) => void
   setAudio: (patch: Partial<AudioSourceConfig>) => void
   setPackageThumbnail: (patch: Partial<PackageThumbnailSlot>) => void

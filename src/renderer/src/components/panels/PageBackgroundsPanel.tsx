@@ -1,8 +1,9 @@
 /**
  * Editor panel for the 10 home-screen page backgrounds.
- * Spec: main 960×512 + thumbnail 360×192, both forced stretch (report §2;
- * IMAGE_SPECS.pageBackgroundMain / pageBackgroundThumbnail). Per-page wave
- * pattern, font color, and font-shadow live here too (§5 <m_bgParam>).
+ * Spec: main 960×512 + thumbnail 360×192, both forced-stretch by default, or
+ * crop-to-fill via `ImageCropper` (report §2; IMAGE_SPECS.pageBackgroundMain
+ * / pageBackgroundThumbnail; `CroppableImageSlot`). Per-page wave pattern,
+ * font color, and font-shadow live here too (§5 <m_bgParam>).
  *
  * `selectedPage` is lifted to EditorShell so the live preview's page-dot
  * row and this panel always point at the same page.
@@ -11,6 +12,8 @@ import { IMAGE_SPECS, type PageIndex } from '@shared/types'
 import { useThemeProject } from '../../state/useThemeProject'
 import { FileDropzone } from '../common/FileDropzone'
 import { ColorSwatchRow } from '../common/ColorSwatchRow'
+import { ImageCropper } from '../common/ImageCropper'
+import { FitModeToggle } from '../common/FitModeToggle'
 import { PAGE_TEXT_PRESETS } from '../../data/colorPresets'
 import { WAVE_PATTERN_COUNT, waveTileColor, wavePatternBackground } from '../../data/wavePattern'
 
@@ -67,6 +70,24 @@ export function PageBackgroundsPanel({
         value={page.images.main.sourcePath}
         onChange={(sourcePath) => setPageImage(selectedPage, 'main', { sourcePath })}
       />
+      {page.images.main.sourcePath && (
+        <>
+          <FitModeToggle
+            value={page.images.main.fitMode}
+            onChange={(fitMode) => setPageImage(selectedPage, 'main', { fitMode })}
+          />
+          {page.images.main.fitMode === 'crop' && (
+            <ImageCropper
+              key={`${selectedPage}-${page.images.main.sourcePath}`}
+              sourcePath={page.images.main.sourcePath}
+              crop={page.images.main.crop}
+              onChange={(crop) => setPageImage(selectedPage, 'main', { crop })}
+              frameWidth={mainSpec.width}
+              frameHeight={mainSpec.height}
+            />
+          )}
+        </>
+      )}
       <FileDropzone
         label={`Page picker thumbnail — ${thumbSpec.width}×${thumbSpec.height}`}
         kind="image"
@@ -74,6 +95,24 @@ export function PageBackgroundsPanel({
         value={page.images.thumbnail.sourcePath}
         onChange={(sourcePath) => setPageImage(selectedPage, 'thumbnail', { sourcePath })}
       />
+      {page.images.thumbnail.sourcePath && (
+        <>
+          <FitModeToggle
+            value={page.images.thumbnail.fitMode}
+            onChange={(fitMode) => setPageImage(selectedPage, 'thumbnail', { fitMode })}
+          />
+          {page.images.thumbnail.fitMode === 'crop' && (
+            <ImageCropper
+              key={`${selectedPage}-${page.images.thumbnail.sourcePath}`}
+              sourcePath={page.images.thumbnail.sourcePath}
+              crop={page.images.thumbnail.crop}
+              onChange={(crop) => setPageImage(selectedPage, 'thumbnail', { crop })}
+              frameWidth={thumbSpec.width}
+              frameHeight={thumbSpec.height}
+            />
+          )}
+        </>
+      )}
 
       <div className="panel-eyebrow">WAVE PATTERN</div>
       <div className="chip-grid chip-grid-8">

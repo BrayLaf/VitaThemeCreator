@@ -475,6 +475,75 @@
   padding: 0 8px;
 }
 
+/* ------------------------------------------------------- image-cropper */
+
+.image-cropper {
+  margin-top: 8px;
+}
+
+.image-cropper-frame {
+  position: relative;
+  width: 100%;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle-2);
+  background-color: var(--bg-surface-2);
+  overflow: hidden;
+}
+
+.image-cropper-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.image-cropper-image:active {
+  cursor: grabbing;
+}
+
+.image-cropper-guide {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.image-cropper-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.image-cropper-zoom {
+  flex: 1;
+  accent-color: var(--accent);
+}
+
+.image-cropper-reset {
+  background: none;
+  border: none;
+  color: var(--text-4);
+  font-size: 11px;
+  cursor: pointer;
+  padding: 0;
+  flex: none;
+}
+
+.image-cropper-reset:hover {
+  color: var(--text-2);
+}
+
+.image-cropper-hint {
+  font-size: 10.5px;
+  color: var(--text-5);
+  margin-top: 4px;
+}
+
 /* --------------------------------------------------------------- swatch */
 
 .swatch-row-field {
@@ -878,12 +947,16 @@
   inset: 0;
 }
 
+/* `object-fit: fill` (not `cover`) — matches convertLockscreenImage's/
+   convertPageBackground's forced-stretch export (`sharp .resize(w, h, {
+   fit: 'fill' })`, common.ts's ResizeFit DECISION note): the Vita shows
+   the source image distorted to exactly fill the frame, never cropped. */
 .preview-bg-image {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: fill;
 }
 
 .preview-bg-placeholder {

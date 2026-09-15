@@ -38,3 +38,16 @@ export function iconOverlayUrl(root: string, glyphStyle: string, slot: string): 
 export function iconSwatchImageUrl(root: string, swatchName: string): string {
   return toFileUrl(`${root}/iconBuilder/Colors/${swatchName}.png`)
 }
+
+/**
+ * `resources/themebuilder-assets/masks/notificationGuide.png` — copied
+ * verbatim from ThemeBUILDER's own `assets/preview/default/LAnotemsk.png`,
+ * the guide overlay its `NOTIFICATION_EDIT` position editor (Theme.py:843
+ * -1295) draws over the icon while the user pans/zooms it: a translucent
+ * scrim with a circular cutout showing exactly which part of the 120×110
+ * frame is actually visible on the Vita's info-bar badge. Passed as
+ * `ImageCropper`'s `guideOverlayUrl` for the notification-icon slots.
+ */
+export function notificationGuideMaskUrl(root: string): string {
+  return toFileUrl(`${root}/masks/notificationGuide.png`)
+}

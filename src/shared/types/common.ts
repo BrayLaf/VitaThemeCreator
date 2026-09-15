@@ -19,19 +19,27 @@ export interface PixelDimensions {
 }
 
 /**
- * Maps to scale.bat's `-keep-ratio` flag (§2):
- * - "forced-stretch"    → `-keep-ratio no`, exact W×H, distorts source aspect ratio
- * - "aspect-preserved"  → `-keep-ratio yes`, fits within a max box, no distortion
+ * - "forced-stretch"   → scale.bat's `-keep-ratio no` (§2): exact W×H, distorts source aspect ratio.
+ * - "cover-with-pan"   → scale to fully cover a fixed frame with no
+ *   distortion, then crop via a user-adjustable zoom + focal point
+ *   (`ImageCrop`, imageSlots.ts) — not a letterboxed "fits within a max box"
+ *   mode. The notification-icon slot always uses this (no stretch option:
+ *   see the DECISION note on `NotificationIconImageSlot`, imageSlots.ts).
  *
  * DECISION (2026-09-14, report §Open Questions #3): production image slots
- * (lockscreen, page backgrounds, thumbnails) keep forced-stretch only, no
- * crop-to-fill mode — matches the original tool exactly, since existing
- * community source art was prepared expecting stretch behavior.
- * "aspect-preserved" remains in this union only because it's genuinely used
- * elsewhere (the notification icon slot, §2) — it is not a general-purpose
- * alternative fit mode offered to users for production images.
+ * (lockscreen, page backgrounds, thumbnails) default to forced-stretch —
+ * matches the original tool exactly, since existing community source art
+ * was prepared expecting stretch behavior.
+ *
+ * DECISION (2026-09-15): those same slots later gained "cover-with-pan" as
+ * an opt-in alternative (`CroppableImageSlot.fitMode`, imageSlots.ts) — a
+ * pure authoring convenience this app adds on top of the original, not a
+ * reproduction of anything Theme.py does. Forced-stretch stays the default
+ * so existing projects and community art keep their exact prior output;
+ * either mode still ends in a plain resize to the fixed target dimensions,
+ * so the on-device result is always the shape Theme.py itself would produce.
  */
-export type ResizeFit = 'forced-stretch' | 'aspect-preserved'
+export type ResizeFit = 'forced-stretch' | 'cover-with-pan'
 
 /**
  * Locales theme.xml writes under `<m_title><m_param>` (§5). Notably there is

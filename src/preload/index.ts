@@ -5,12 +5,12 @@ import { IPC_CHANNELS, type ThemeBuilderApi } from '@shared/ipc'
 // Typed bridge to the main-process modules via the channels registered in
 // src/main/ipc.ts. This file only forwards each call over IPC.
 const api: ThemeBuilderApi = {
-  convertLockscreenImage: (sourcePath, outputPath) =>
-    ipcRenderer.invoke(IPC_CHANNELS.convertLockscreenImage, sourcePath, outputPath),
-  convertPageBackground: (sources, pageIndex, outputPaths) =>
-    ipcRenderer.invoke(IPC_CHANNELS.convertPageBackground, sources, pageIndex, outputPaths),
-  convertNotificationIcon: (sourcePath, variant, outputPath) =>
-    ipcRenderer.invoke(IPC_CHANNELS.convertNotificationIcon, sourcePath, variant, outputPath),
+  convertLockscreenImage: (sourcePath, crop, outputPath) =>
+    ipcRenderer.invoke(IPC_CHANNELS.convertLockscreenImage, sourcePath, crop, outputPath),
+  convertPageBackground: (sources, crops, pageIndex, outputPaths) =>
+    ipcRenderer.invoke(IPC_CHANNELS.convertPageBackground, sources, crops, pageIndex, outputPaths),
+  convertNotificationIcon: (sourcePath, crop, outputPath) =>
+    ipcRenderer.invoke(IPC_CHANNELS.convertNotificationIcon, sourcePath, crop, outputPath),
   generatePackageThumbnail: (mode, sources, outputPath) =>
     ipcRenderer.invoke(IPC_CHANNELS.generatePackageThumbnail, mode, sources, outputPath),
   generatePreviewScreenshot: (source, sourceImagePath, outputPath) =>

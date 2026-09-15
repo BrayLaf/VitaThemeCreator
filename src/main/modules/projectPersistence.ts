@@ -11,7 +11,7 @@
  * project folder and never ships.
  */
 import { readFile, writeFile } from 'fs/promises'
-import type { ThemeProject } from '@shared/types'
+import { DEFAULT_IMAGE_CROP, type CroppableImageSlot, type ThemeProject } from '@shared/types'
 
 /** Bumped only if the on-disk project-file shape changes incompatibly. */
 const PROJECT_FILE_FORMAT_VERSION = 1
@@ -33,7 +33,48 @@ export async function loadThemeProject(projectFilePath: string): Promise<ThemePr
       `unsupported project file format version ${envelope.formatVersion} (expected ${PROJECT_FILE_FORMAT_VERSION})`
     )
   }
-  return envelope.project
+  return withCropDefaults(envelope.project)
+}
+
+/** Fills in a `CroppableImageSlot`'s `fitMode`/`crop` when a pre-crop-feature project.json lacks them — defaults to the original 'stretch' behavior, never a silent 'crop'. */
+function withCroppableDefaults(slot: CroppableImageSlot): CroppableImageSlot {
+  return {
+    ...slot,
+    fitMode: slot.fitMode ?? 'stretch',
+    crop: slot.crop ?? { ...DEFAULT_IMAGE_CROP }
+  }
+}
+
+/**
+ * `crop` was added to the notification-icon slots (2026-09-15, see the
+ * `NotificationIconImageSlot` DECISION note, imageSlots.ts), and `fitMode`/
+ * `crop` to the lockscreen and page-background slots (`CroppableImageSlot`)
+ * shortly after — both without bumping the format version, so a project.json
+ * saved before either change is missing those fields. Default them in
+ * rather than failing to load.
+ */
+function withCropDefaults(project: ThemeProject): ThemeProject {
+  return {
+    ...project,
+    lockscreenImage: withCroppableDefaults(project.lockscreenImage),
+    pages: project.pages.map((page) => ({
+      ...page,
+      images: {
+        main: withCroppableDefaults(page.images.main),
+        thumbnail: withCroppableDefaults(page.images.thumbnail)
+      }
+    })) as ThemeProject['pages'],
+    notificationIcons: {
+      noNotice: {
+        ...project.notificationIcons.noNotice,
+        crop: project.notificationIcons.noNotice.crop ?? { ...DEFAULT_IMAGE_CROP }
+      },
+      newNotice: {
+        ...project.notificationIcons.newNotice,
+        crop: project.notificationIcons.newNotice.crop ?? { ...DEFAULT_IMAGE_CROP }
+      }
+    }
+  }
 }
 
 /**
