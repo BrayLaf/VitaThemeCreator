@@ -1,8 +1,19 @@
-import { app, shell, BrowserWindow } from 'electron'
+import { app, shell, BrowserWindow, protocol, net } from 'electron'
 import { join } from 'path'
+import { pathToFileURL } from 'url'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import { registerIpcHandlers } from './ipc'
+
+// In dev the renderer is served from ELECTRON_RENDERER_URL (http://localhost),
+// and Chromium refuses to load plain file:// resources into a non-file-origin
+// page ("Not allowed to load local resource") — that's why source images
+// picked via the file dialog rendered as broken-image icons. A privileged
+// custom scheme served via protocol.handle sidesteps that restriction and
+// works identically in dev and in the packaged (file://) build.
+protocol.registerSchemesAsPrivileged([
+  { scheme: 'themefile', privileges: { standard: true, secure: true, supportFetchAPI: true } }
+])
 
 function createWindow(): void {
   // Create the browser window.
@@ -42,6 +53,16 @@ function createWindow(): void {
 app.whenReady().then(() => {
   // Set app user model id for windows
   electronApp.setAppUserModelId('com.electron')
+
+  protocol.handle('themefile', (request) => {
+    // Chromium's URL parser treats the first path segment of a privileged
+    // "standard" custom scheme as an authority/host (and lowercases it),
+    // so "themefile:///Users/x.png" doesn't round-trip as a plain path —
+    // the real path travels in a query param instead.
+    const filePath = new URL(request.url).searchParams.get('p')
+    if (!filePath) return new Response('Missing path', { status: 400 })
+    return net.fetch(pathToFileURL(filePath).toString())
+  })
 
   // Default open or close DevTools by F12 in development
   // and ignore CommandOrControl + R in production.

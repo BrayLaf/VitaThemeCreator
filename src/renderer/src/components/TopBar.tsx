@@ -8,7 +8,13 @@
 import { useRef, useState } from 'react'
 import { useThemeProject } from '../state/useThemeProject'
 
-export function TopBar({ onBuildExport }: { onBuildExport: () => void }): React.JSX.Element {
+export function TopBar({
+  onBuildExport,
+  onHome
+}: {
+  onBuildExport: () => void
+  onHome: () => void
+}): React.JSX.Element {
   const { project, loadProject } = useThemeProject()
   const [status, setStatus] = useState<string | null>(null)
   const lastPathRef = useRef<string | null>(null)
@@ -62,6 +68,9 @@ export function TopBar({ onBuildExport }: { onBuildExport: () => void }): React.
         {status && <div className="topbar-status">{status}</div>}
       </div>
       <div className="topbar-right">
+        <button type="button" className="topbar-button" onClick={onHome}>
+          ← Library
+        </button>
         <button type="button" className="topbar-button" onClick={() => void handleOpen()}>
           Open
         </button>

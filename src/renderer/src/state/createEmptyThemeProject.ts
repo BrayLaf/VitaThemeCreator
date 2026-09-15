@@ -16,10 +16,11 @@ function emptyImageSourceRef(): { sourcePath: string | null } {
   return { sourcePath: null }
 }
 
+/** Matches Icon.py's own real first-run defaults (Icon.py:89,106: `icon1col = 'White'`, `icon1bgc = 'None.'`) — a valid, real bundled swatch from the start, never an empty name nothing resolves to. */
 function emptyIconChoice(): IconGenerationChoice {
   return {
-    glyphStyle: 'Default',
-    background: { kind: 'swatch', name: '' }
+    glyphStyle: 'White',
+    background: { kind: 'swatch', name: 'None.' }
   }
 }
 
@@ -50,6 +51,11 @@ function emptyIconSet(): Record<IconSlotKey, IconGenerationChoice> {
     IconSlotKey,
     IconGenerationChoice
   >
+}
+
+/** Same real first-run defaults as a fresh theme's `iconSet`, for the standalone icon-set creator. */
+export function createEmptyIconSetSelection(): Record<IconSlotKey, IconGenerationChoice> {
+  return emptyIconSet()
 }
 
 export function createEmptyThemeProject(): ThemeProject {

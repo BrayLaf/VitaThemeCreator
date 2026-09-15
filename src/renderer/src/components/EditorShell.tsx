@@ -29,7 +29,7 @@ const SECTION_PREVIEW_TAB: Partial<Record<SectionId, PreviewTab>> = {
   icons: 'home'
 }
 
-export function EditorShell(): React.JSX.Element {
+export function EditorShell({ onHome }: { onHome: () => void }): React.JSX.Element {
   const { project } = useThemeProject()
   const [activeSection, setActiveSection] = useState<SectionId>('lock')
   const [previewTab, setPreviewTab] = useState<PreviewTab>('lock')
@@ -43,7 +43,7 @@ export function EditorShell(): React.JSX.Element {
 
   return (
     <div className="editor-shell">
-      <TopBar onBuildExport={() => selectSection('export')} />
+      <TopBar onBuildExport={() => selectSection('export')} onHome={onHome} />
       <div className="editor-body">
         <SectionNav sections={SECTIONS} active={activeSection} onSelect={selectSection} />
 

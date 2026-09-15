@@ -35,7 +35,12 @@ export async function compositeSystemIcon(
   const { background, glyphStyle } = choice
   let backgroundSourcePath: string
   if (background.kind === 'swatch') {
-    backgroundSourcePath = iconSwatchPath(background.name)
+    // Icon.py's own default background is 'None.' (Icon.py:106) — fall back
+    // to it for an empty/unset name rather than requesting a nonexistent
+    // "<root>/Colors/.png", so a build never fails over an icon nobody's
+    // customized yet (createEmptyThemeProject.ts sets this real default up
+    // front; this is just a backstop for e.g. an older/hand-edited project.json).
+    backgroundSourcePath = iconSwatchPath(background.name || 'None.')
   } else if (background.kind === 'custom') {
     backgroundSourcePath = background.sourcePath
   } else {

@@ -45,8 +45,20 @@ export interface ManifestInfomationBarProperty {
 }
 
 export interface ManifestBackgroundParam {
-  thumbnailFilePath: string
-  imageFilePath: string
+  /**
+   * `null` when the page has no background image set — `generateManifest`
+   * omits `<m_thumbnailFilePath>`/`<m_imageFilePath>` entirely for that page
+   * rather than pointing at a bgN.png/bgNt.png packaging.ts never generates
+   * (see its "page background is optional" comment). DECISION (2026-09-15):
+   * the original tool always writes both regardless (Theme.py:2385-2522)
+   * even though its own bgN.png conversion silently no-ops on an empty
+   * source path — a latent bug in the original, not behavior worth
+   * reproducing; a real third-party validator flags the dangling reference
+   * as an error ("PSVita will not load this image") and its own remediation
+   * advice is to drop the node so the firmware falls back to `m_waveType`.
+   */
+  thumbnailFilePath: string | null
+  imageFilePath: string | null
   /** 0-30. */
   waveType: number
   fontColor: ManifestColor

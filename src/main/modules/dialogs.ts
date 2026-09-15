@@ -3,7 +3,8 @@
  * project Open/Save actions. Thin wrappers over Electron's `dialog` — no
  * domain logic lives here.
  */
-import { dialog, BrowserWindow } from 'electron'
+import { dialog, shell, BrowserWindow } from 'electron'
+import { resolve } from 'path'
 
 const IMAGE_FILTERS = [{ name: 'Images', extensions: ['png', 'jpg', 'jpeg', 'bmp', 'gif'] }]
 const AUDIO_FILTERS = [{ name: 'Audio', extensions: ['at9', 'wav', 'mp3'] }]
@@ -45,4 +46,15 @@ export async function pickProjectSavePath(defaultName: string): Promise<string |
     ? await dialog.showSaveDialog(win, options)
     : await dialog.showSaveDialog(options)
   return result.canceled || !result.filePath ? null : result.filePath
+}
+
+/**
+ * Opens the OS file manager (Finder/Explorer) with `path` selected — used by
+ * the export success notices so a user can jump straight to a just-built
+ * zip/folder instead of hunting for it. `path` may be relative (e.g. the
+ * literal `'Exported'` build-root strings ExportPanel.tsx passes around);
+ * `shell.showItemInFolder` needs an absolute one.
+ */
+export function revealFile(path: string): void {
+  shell.showItemInFolder(resolve(path))
 }

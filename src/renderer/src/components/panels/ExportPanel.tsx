@@ -9,6 +9,7 @@ import { useState } from 'react'
 import type { PackageThumbnailMode, PreviewScreenshotSource } from '@shared/types'
 import { useThemeProject } from '../../state/useThemeProject'
 import { FileDropzone } from '../common/FileDropzone'
+import { cleanIpcErrorMessage } from '../../lib/uiHelpers'
 
 const THUMBNAIL_MODE_LABELS: Record<PackageThumbnailMode, string> = {
   'auto-collage': 'Auto-generate from page thumbnails',
@@ -30,18 +31,27 @@ const PREVIEW_SOURCE_IMPLEMENTED: Record<PreviewScreenshotSource, boolean> = {
   'captured-from-device': false
 }
 
+type ExportStatus =
+  { kind: 'building' } | { kind: 'success'; zipPath: string } | { kind: 'error'; message: string }
+
 export function ExportPanel(): React.JSX.Element {
   const { project, setMeta, setPackageThumbnail, setPreviewScreenshots } = useThemeProject()
-  const [status, setStatus] = useState<string | null>(null)
+  const [status, setStatus] = useState<ExportStatus | null>(null)
 
   const handleExport = async (): Promise<void> => {
-    setStatus('Building…')
+    setStatus({ kind: 'building' })
     try {
       const buildFolderPath = await window.api.buildThemeFolder(project, 'Created Themes')
       const result = await window.api.packageTheme(buildFolderPath, 'Exported')
-      setStatus(`Exported to ${result.zipPath}`)
+      setStatus({ kind: 'success', zipPath: result.zipPath })
     } catch (error) {
-      setStatus(`Export failed: ${error instanceof Error ? error.message : String(error)}`)
+      // Every genuinely optional/defaultable slot (lockscreen, notification
+      // icons, package-thumbnail collage tiles) now has a real fallback —
+      // see packaging.ts/resourcePaths.ts — so an error surfacing here is a
+      // real failure (e.g. a corrupt source image, or .at9 encoding needing
+      // Wine) worth a clear, hard-to-miss notice rather than easy-to-miss
+      // console output.
+      setStatus({ kind: 'error', message: cleanIpcErrorMessage(error) })
     }
   }
 
@@ -139,7 +149,25 @@ export function ExportPanel(): React.JSX.Element {
       <button type="button" className="export-button" onClick={() => void handleExport()}>
         Build &amp; Export .zip
       </button>
-      {status && <p className="panel-status">{status}</p>}
+      {status?.kind === 'building' && <p className="panel-status">Building…</p>}
+      {status?.kind === 'success' && (
+        <div className="export-notice export-notice-success">
+          Exported to{' '}
+          <button
+            type="button"
+            className="export-notice-link"
+            onClick={() => void window.api.revealFile(status.zipPath)}
+          >
+            {status.zipPath}
+          </button>
+        </div>
+      )}
+      {status?.kind === 'error' && (
+        <div className="export-notice export-notice-error">
+          <div className="export-notice-title">Export failed</div>
+          <div className="export-notice-message">{status.message}</div>
+        </div>
+      )}
     </section>
   )
 }

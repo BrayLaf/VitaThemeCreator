@@ -35,9 +35,11 @@ export interface PageBackgroundImageSlot {
 
 // ---------------------------------------------------------------------------
 // Notification icons — "no notice" and "new notice" bubble icons. Scaled to
-// max-height 37px with aspect preserved, then alpha-masked to the 40×37 pill
-// shape via mask_not.png (CopyOpacity compose). Source ref: Theme.py:1063-1066,
-// 1283-1291; written as notices.png/notice.png at Theme.py:2649-2650.
+// max-height 110px with aspect preserved, then alpha-masked to the 120×110
+// pill shape via mask_not.png (CopyOpacity compose) — see the
+// `IMAGE_SPECS.notificationIcon` DECISION comment for why this isn't 40×37.
+// Source ref: Theme.py:1063-1066, 1283-1291; written as notices.png/notice.png
+// at Theme.py:2649-2650.
 // ---------------------------------------------------------------------------
 export interface NotificationIconImageSlot {
   noNotice: ImageSourceRef
@@ -70,8 +72,20 @@ export interface PackageThumbnailSlot {
  * output paths, not raw project state.
  */
 export interface PackageThumbnailSources {
-  /** Required when mode === 'auto-collage': 4 built page background images, arranged top-left/top-right/bottom-left/bottom-right. */
-  collagePageImagePaths?: [string, string, string, string]
+  /**
+   * Required when mode === 'auto-collage': 4 built page background images,
+   * arranged top-left/top-right/bottom-left/bottom-right. `null` for a page
+   * with no background set — rendered as a neutral placeholder tile rather
+   * than failing the export.
+   */
+  collagePageImagePaths?: [string | null, string | null, string | null, string | null]
+  /**
+   * Used when mode === 'auto-collage': the theme name, rendered centered in
+   * a reserved black caption band under the collage — confirmed against a
+   * real ThemeBUILDER-exported preview_thumbnail.png (Theme.py's
+   * `GenerateTHEME_image`, report §2 "Package thumbnail" row).
+   */
+  themeName?: string
   /** Required when mode === 'custom-image'. */
   customImagePath?: string
 }
@@ -121,12 +135,25 @@ export const IMAGE_SPECS = {
     dimensions: { width: 360, height: 192 } satisfies PixelDimensions,
     fit: 'forced-stretch' as ResizeFit
   },
+  /**
+   * DECISION (2026-09-15): the domain report's §2 citation (`Theme.py:1283
+   * -1291`, max-height 37 -> `mask_not.png` at its native 40×37) is the
+   * tool's own small in-app preview-widget pipeline, not the size it ships
+   * in a built theme. `Theme.py:1063` (the *custom-icon-picker* path, taken
+   * when a user actually sets a notification icon) scales to `-max-height
+   * 120` alongside a paired `V1=110` constant — and a real third-party PS
+   * Vita theme validator flags this app's 40×37 output as wrong, expecting
+   * 120×110. 40×37 × 3 ≈ 120×110 almost exactly, so 40×37 is that preview
+   * widget's own size, scaled down 3× from the real shipped asset. Fixed to
+   * 120×110; `mask_not.png` (still only bundled at 40×37 — no 3× asset
+   * exists) is upscaled at composite time in `convertNotificationIcon`.
+   */
   notificationIcon: {
     /** Aspect-preserved scale bound (only height is constrained per §2). */
-    maxHeight: 37,
+    maxHeight: 110,
     fit: 'aspect-preserved' as ResizeFit,
-    /** The mask (mask_not.png) is what actually clips the final shape. */
-    maskDimensions: { width: 40, height: 37 } satisfies PixelDimensions
+    /** The mask (mask_not.png, upscaled 3× from its bundled 40×37) is what actually clips the final shape. */
+    maskDimensions: { width: 120, height: 110 } satisfies PixelDimensions
   },
   systemIcon: {
     dimensions: { width: 128, height: 128 } satisfies PixelDimensions,

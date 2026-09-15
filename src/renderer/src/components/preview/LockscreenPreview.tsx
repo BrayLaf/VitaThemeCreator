@@ -14,10 +14,26 @@
  * silent drag handle, not text — Theme.py's own preview never draws a
  * "slide to unlock" label (there's nothing themeable there to preview), so
  * this renders a small handle instead of fabricating the label.
+ *
+ * Clock stacking order (date above, large time below) and date format
+ * ("January 1 (Monday)" — Month Day (Weekday), not the locale default
+ * "Weekday, Month Day") are both confirmed against a real exported
+ * preview_lockscreen.png from the legacy tool, matching its own live-preview
+ * draw call (Theme.py:2158-2164: `draw_text("January 1 (Monday)", ...)`).
+ *
+ * The page-lip/bezel frame in the corner is `assets/preview/default/
+ * overlay.png` (`Image_LS_Overlay`, Theme.py:2167) — a fixed 390×221
+ * decoration (matching the live-preview canvas's own aspect ratio) drawn on
+ * top of everything else in the original tool's own preview widget, then
+ * baked into the exported preview_lockscreen.png itself (Theme.py:2247
+ * screen-grabs that same widget). It is not part of the real device
+ * lockscreen — only of the preview chrome — so it renders above the
+ * background/clock/notification bubble here too.
  */
 import type { CSSProperties } from 'react'
 import type { ClockPosition, ThemeProject } from '@shared/types'
 import { toFileUrl } from '../../lib/uiHelpers'
+import lockscreenOverlayUrl from '../../assets/lockscreen-preview-overlay.png'
 
 function clockAlignStyle(position: ClockPosition): CSSProperties {
   if (position === 1) return { left: '3.5cqw', top: '7cqw', alignItems: 'flex-start' }
@@ -34,7 +50,9 @@ export function LockscreenPreview({
 }): React.JSX.Element {
   const { clock, notificationColors, notificationIcons, lockscreenImage } = project
   const time = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })
-  const date = now.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' })
+  const month = now.toLocaleDateString(undefined, { month: 'long' })
+  const weekday = now.toLocaleDateString(undefined, { weekday: 'long' })
+  const date = `${month} ${now.getDate()} (${weekday})`
   const newNoticePath = notificationIcons.newNotice.sourcePath
 
   return (
@@ -49,11 +67,11 @@ export function LockscreenPreview({
       <div className="preview-scrim" />
 
       <div className="preview-clock" style={clockAlignStyle(clock.position)}>
-        <div className="preview-clock-time" style={{ color: `#${clock.color}` }}>
-          {time}
-        </div>
         <div className="preview-clock-date" style={{ color: `#${clock.color}` }}>
           {date}
+        </div>
+        <div className="preview-clock-time" style={{ color: `#${clock.color}` }}>
+          {time}
         </div>
       </div>
 
@@ -71,6 +89,8 @@ export function LockscreenPreview({
       </div>
 
       <div className="preview-unlock-handle" />
+
+      <img className="preview-lockscreen-overlay" src={lockscreenOverlayUrl} alt="" />
     </div>
   )
 }

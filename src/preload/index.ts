@@ -15,6 +15,14 @@ const api: ThemeBuilderApi = {
     ipcRenderer.invoke(IPC_CHANNELS.generatePackageThumbnail, mode, sources, outputPath),
   generatePreviewScreenshot: (source, sourceImagePath, outputPath) =>
     ipcRenderer.invoke(IPC_CHANNELS.generatePreviewScreenshot, source, sourceImagePath, outputPath),
+  generateLockscreenPreviewScreenshot: (lockscreenImagePath, clock, infoBarColors, outputPath) =>
+    ipcRenderer.invoke(
+      IPC_CHANNELS.generateLockscreenPreviewScreenshot,
+      lockscreenImagePath,
+      clock,
+      infoBarColors,
+      outputPath
+    ),
 
   compositeSystemIcon: (slot, choice, outputPath) =>
     ipcRenderer.invoke(IPC_CHANNELS.compositeSystemIcon, slot, choice, outputPath),
@@ -38,11 +46,20 @@ const api: ThemeBuilderApi = {
   saveThemeProject: (project, projectFilePath) =>
     ipcRenderer.invoke(IPC_CHANNELS.saveThemeProject, project, projectFilePath),
 
+  listCreatedThemes: (buildRootDir) =>
+    ipcRenderer.invoke(IPC_CHANNELS.listCreatedThemes, buildRootDir),
+  deleteCreatedTheme: (buildFolderPath) =>
+    ipcRenderer.invoke(IPC_CHANNELS.deleteCreatedTheme, buildFolderPath),
+
   pickImageFile: () => ipcRenderer.invoke(IPC_CHANNELS.pickImageFile),
   pickAudioFile: () => ipcRenderer.invoke(IPC_CHANNELS.pickAudioFile),
   pickProjectOpenPath: () => ipcRenderer.invoke(IPC_CHANNELS.pickProjectOpenPath),
   pickProjectSavePath: (defaultName) =>
-    ipcRenderer.invoke(IPC_CHANNELS.pickProjectSavePath, defaultName)
+    ipcRenderer.invoke(IPC_CHANNELS.pickProjectSavePath, defaultName),
+  revealFile: (path) => ipcRenderer.invoke(IPC_CHANNELS.revealFile, path),
+
+  resolveThemebuilderAssetPath: (segments) =>
+    ipcRenderer.invoke(IPC_CHANNELS.resolveThemebuilderAssetPath, segments)
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to
