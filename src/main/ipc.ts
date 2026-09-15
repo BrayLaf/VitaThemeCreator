@@ -18,6 +18,12 @@ import { convertAudioTrack } from './modules/audioConversion'
 import { generateManifest, serializeManifestXml } from './modules/manifestGeneration'
 import { buildThemeFolder, packageTheme } from './modules/packaging'
 import { loadThemeProject, saveThemeProject } from './modules/projectPersistence'
+import {
+  pickAudioFile,
+  pickImageFile,
+  pickProjectOpenPath,
+  pickProjectSavePath
+} from './modules/dialogs'
 
 export function registerIpcHandlers(): void {
   ipcMain.handle(IPC_CHANNELS.convertLockscreenImage, (_event, sourcePath, outputPath) =>
@@ -66,5 +72,12 @@ export function registerIpcHandlers(): void {
   )
   ipcMain.handle(IPC_CHANNELS.saveThemeProject, (_event, project, projectFilePath) =>
     saveThemeProject(project, projectFilePath)
+  )
+
+  ipcMain.handle(IPC_CHANNELS.pickImageFile, () => pickImageFile())
+  ipcMain.handle(IPC_CHANNELS.pickAudioFile, () => pickAudioFile())
+  ipcMain.handle(IPC_CHANNELS.pickProjectOpenPath, () => pickProjectOpenPath())
+  ipcMain.handle(IPC_CHANNELS.pickProjectSavePath, (_event, defaultName) =>
+    pickProjectSavePath(defaultName)
   )
 }

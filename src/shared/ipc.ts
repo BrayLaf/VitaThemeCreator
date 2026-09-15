@@ -67,6 +67,12 @@ export interface ThemeBuilderApi {
   // projectPersistence.ts
   loadThemeProject(projectFilePath: string): Promise<ThemeProject>
   saveThemeProject(project: ThemeProject, projectFilePath: string): Promise<void>
+
+  // dialogs.ts
+  pickImageFile(): Promise<string | null>
+  pickAudioFile(): Promise<string | null>
+  pickProjectOpenPath(): Promise<string | null>
+  pickProjectSavePath(defaultName: string): Promise<string | null>
 }
 
 /**
@@ -88,5 +94,9 @@ export const IPC_CHANNELS: Record<keyof ThemeBuilderApi, string> = {
   buildThemeFolder: 'packaging:buildThemeFolder',
   packageTheme: 'packaging:packageTheme',
   loadThemeProject: 'project:loadThemeProject',
-  saveThemeProject: 'project:saveThemeProject'
+  saveThemeProject: 'project:saveThemeProject',
+  pickImageFile: 'dialog:pickImageFile',
+  pickAudioFile: 'dialog:pickAudioFile',
+  pickProjectOpenPath: 'dialog:pickProjectOpenPath',
+  pickProjectSavePath: 'dialog:pickProjectSavePath'
 }

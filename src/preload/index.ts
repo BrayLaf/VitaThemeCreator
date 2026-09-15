@@ -36,7 +36,13 @@ const api: ThemeBuilderApi = {
   loadThemeProject: (projectFilePath) =>
     ipcRenderer.invoke(IPC_CHANNELS.loadThemeProject, projectFilePath),
   saveThemeProject: (project, projectFilePath) =>
-    ipcRenderer.invoke(IPC_CHANNELS.saveThemeProject, project, projectFilePath)
+    ipcRenderer.invoke(IPC_CHANNELS.saveThemeProject, project, projectFilePath),
+
+  pickImageFile: () => ipcRenderer.invoke(IPC_CHANNELS.pickImageFile),
+  pickAudioFile: () => ipcRenderer.invoke(IPC_CHANNELS.pickAudioFile),
+  pickProjectOpenPath: () => ipcRenderer.invoke(IPC_CHANNELS.pickProjectOpenPath),
+  pickProjectSavePath: (defaultName) =>
+    ipcRenderer.invoke(IPC_CHANNELS.pickProjectSavePath, defaultName)
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to
