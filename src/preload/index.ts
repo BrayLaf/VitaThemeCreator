@@ -2,21 +2,19 @@ import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 import { IPC_CHANNELS, type ThemeBuilderApi } from '@shared/ipc'
 
-// Typed bridge to the main-process stub modules (step 3) via the channels
-// registered in src/main/ipc.ts. Every call currently rejects with
-// "not implemented" — that's the main-process stubs' behavior, this file
-// only forwards the call.
+// Typed bridge to the main-process modules via the channels registered in
+// src/main/ipc.ts. This file only forwards each call over IPC.
 const api: ThemeBuilderApi = {
   convertLockscreenImage: (sourcePath, outputPath) =>
     ipcRenderer.invoke(IPC_CHANNELS.convertLockscreenImage, sourcePath, outputPath),
-  convertPageBackground: (sourcePath, pageIndex, outputPaths) =>
-    ipcRenderer.invoke(IPC_CHANNELS.convertPageBackground, sourcePath, pageIndex, outputPaths),
+  convertPageBackground: (sources, pageIndex, outputPaths) =>
+    ipcRenderer.invoke(IPC_CHANNELS.convertPageBackground, sources, pageIndex, outputPaths),
   convertNotificationIcon: (sourcePath, variant, outputPath) =>
     ipcRenderer.invoke(IPC_CHANNELS.convertNotificationIcon, sourcePath, variant, outputPath),
-  generatePackageThumbnail: (mode, outputPath) =>
-    ipcRenderer.invoke(IPC_CHANNELS.generatePackageThumbnail, mode, outputPath),
-  generatePreviewScreenshot: (source, outputPath) =>
-    ipcRenderer.invoke(IPC_CHANNELS.generatePreviewScreenshot, source, outputPath),
+  generatePackageThumbnail: (mode, sources, outputPath) =>
+    ipcRenderer.invoke(IPC_CHANNELS.generatePackageThumbnail, mode, sources, outputPath),
+  generatePreviewScreenshot: (source, sourceImagePath, outputPath) =>
+    ipcRenderer.invoke(IPC_CHANNELS.generatePreviewScreenshot, source, sourceImagePath, outputPath),
 
   compositeSystemIcon: (slot, choice, outputPath) =>
     ipcRenderer.invoke(IPC_CHANNELS.compositeSystemIcon, slot, choice, outputPath),

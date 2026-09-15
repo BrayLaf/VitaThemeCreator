@@ -15,6 +15,7 @@ import type {
   IconSetSelection,
   IconSlotKey,
   PackageThumbnailMode,
+  PackageThumbnailSources,
   PreviewScreenshotSource,
   ThemeManifest,
   ThemeProject
@@ -24,7 +25,7 @@ export interface ThemeBuilderApi {
   // imageConversion.ts
   convertLockscreenImage(sourcePath: string, outputPath: string): Promise<string>
   convertPageBackground(
-    sourcePath: string,
+    sources: { main: string; thumbnail: string },
     pageIndex: number,
     outputPaths: { main: string; thumbnail: string }
   ): Promise<{ main: string; thumbnail: string }>
@@ -33,8 +34,16 @@ export interface ThemeBuilderApi {
     variant: 'noNotice' | 'newNotice',
     outputPath: string
   ): Promise<string>
-  generatePackageThumbnail(mode: PackageThumbnailMode, outputPath: string): Promise<string>
-  generatePreviewScreenshot(source: PreviewScreenshotSource, outputPath: string): Promise<string>
+  generatePackageThumbnail(
+    mode: PackageThumbnailMode,
+    sources: PackageThumbnailSources,
+    outputPath: string
+  ): Promise<string>
+  generatePreviewScreenshot(
+    source: PreviewScreenshotSource,
+    sourceImagePath: string | null,
+    outputPath: string
+  ): Promise<string>
 
   // iconGeneration.ts
   compositeSystemIcon(
