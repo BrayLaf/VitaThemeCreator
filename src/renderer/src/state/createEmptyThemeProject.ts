@@ -1,0 +1,69 @@
+/**
+ * Builds a blank `ThemeProject` — the initial state for a new, unsaved
+ * theme in the editor. Every field is a neutral default; nothing here is
+ * validated or written to disk (that's `saveThemeProject`, step 3).
+ */
+import {
+  ICON_SLOT_KEYS,
+  type IconSlotKey,
+  type IconGenerationChoice,
+  type PageProject,
+  type ThemeProject,
+  type Tuple10
+} from '@shared/types'
+
+function emptyImageSourceRef(): { sourcePath: string | null } {
+  return { sourcePath: null }
+}
+
+function emptyIconChoice(): IconGenerationChoice {
+  return {
+    glyphStyle: 'Default',
+    background: { kind: 'swatch', name: '' }
+  }
+}
+
+function emptyPage(): PageProject {
+  return {
+    colors: { waveType: 0, fontColor: 'ffffff', fontShadow: true },
+    images: { main: emptyImageSourceRef(), thumbnail: emptyImageSourceRef() }
+  }
+}
+
+function emptyPages(): Tuple10<PageProject> {
+  return [
+    emptyPage(),
+    emptyPage(),
+    emptyPage(),
+    emptyPage(),
+    emptyPage(),
+    emptyPage(),
+    emptyPage(),
+    emptyPage(),
+    emptyPage(),
+    emptyPage()
+  ]
+}
+
+function emptyIconSet(): Record<IconSlotKey, IconGenerationChoice> {
+  return Object.fromEntries(ICON_SLOT_KEYS.map((key) => [key, emptyIconChoice()])) as Record<
+    IconSlotKey,
+    IconGenerationChoice
+  >
+}
+
+export function createEmptyThemeProject(): ThemeProject {
+  return {
+    meta: { name: 'Untitled Theme', version: '01.00', creator: '' },
+    clock: { color: 'ffffff', position: 0 },
+    notificationColors: { boxColor: '000000', textColor: 'ffffff' },
+    infoBarColors: { barColor: '000000', indicatorColor: 'ffffff' },
+    lockscreenImage: emptyImageSourceRef(),
+    pages: emptyPages(),
+    notificationIcons: { noNotice: emptyImageSourceRef(), newNotice: emptyImageSourceRef() },
+    iconSet: emptyIconSet(),
+    audio: { kind: 'default-bundled', sourcePath: null },
+    packageThumbnail: { mode: 'auto-collage', customImage: null },
+    previewScreenshots: { source: 'generated' }
+  }
+}

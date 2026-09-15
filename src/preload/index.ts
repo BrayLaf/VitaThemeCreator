@@ -1,0 +1,59 @@
+import { contextBridge, ipcRenderer } from 'electron'
+import { electronAPI } from '@electron-toolkit/preload'
+import { IPC_CHANNELS, type ThemeBuilderApi } from '@shared/ipc'
+
+// Typed bridge to the main-process stub modules (step 3) via the channels
+// registered in src/main/ipc.ts. Every call currently rejects with
+// "not implemented" — that's the main-process stubs' behavior, this file
+// only forwards the call.
+const api: ThemeBuilderApi = {
+  convertLockscreenImage: (sourcePath, outputPath) =>
+    ipcRenderer.invoke(IPC_CHANNELS.convertLockscreenImage, sourcePath, outputPath),
+  convertPageBackground: (sourcePath, pageIndex, outputPaths) =>
+    ipcRenderer.invoke(IPC_CHANNELS.convertPageBackground, sourcePath, pageIndex, outputPaths),
+  convertNotificationIcon: (sourcePath, variant, outputPath) =>
+    ipcRenderer.invoke(IPC_CHANNELS.convertNotificationIcon, sourcePath, variant, outputPath),
+  generatePackageThumbnail: (mode, outputPath) =>
+    ipcRenderer.invoke(IPC_CHANNELS.generatePackageThumbnail, mode, outputPath),
+  generatePreviewScreenshot: (source, outputPath) =>
+    ipcRenderer.invoke(IPC_CHANNELS.generatePreviewScreenshot, source, outputPath),
+
+  compositeSystemIcon: (slot, choice, outputPath) =>
+    ipcRenderer.invoke(IPC_CHANNELS.compositeSystemIcon, slot, choice, outputPath),
+  generateIconSet: (setName, selection, outputDir) =>
+    ipcRenderer.invoke(IPC_CHANNELS.generateIconSet, setName, selection, outputDir),
+
+  convertAudioTrack: (config, outputPath) =>
+    ipcRenderer.invoke(IPC_CHANNELS.convertAudioTrack, config, outputPath),
+
+  generateManifest: (project) => ipcRenderer.invoke(IPC_CHANNELS.generateManifest, project),
+  serializeManifestXml: (manifest) =>
+    ipcRenderer.invoke(IPC_CHANNELS.serializeManifestXml, manifest),
+
+  buildThemeFolder: (project, buildRootDir) =>
+    ipcRenderer.invoke(IPC_CHANNELS.buildThemeFolder, project, buildRootDir),
+  packageTheme: (buildFolderPath, exportDir) =>
+    ipcRenderer.invoke(IPC_CHANNELS.packageTheme, buildFolderPath, exportDir),
+
+  loadThemeProject: (projectFilePath) =>
+    ipcRenderer.invoke(IPC_CHANNELS.loadThemeProject, projectFilePath),
+  saveThemeProject: (project, projectFilePath) =>
+    ipcRenderer.invoke(IPC_CHANNELS.saveThemeProject, project, projectFilePath)
+}
+
+// Use `contextBridge` APIs to expose Electron APIs to
+// renderer only if context isolation is enabled, otherwise
+// just add to the DOM global.
+if (process.contextIsolated) {
+  try {
+    contextBridge.exposeInMainWorld('electron', electronAPI)
+    contextBridge.exposeInMainWorld('api', api)
+  } catch (error) {
+    console.error(error)
+  }
+} else {
+  // @ts-ignore (define in dts)
+  window.electron = electronAPI
+  // @ts-ignore (define in dts)
+  window.api = api
+}
