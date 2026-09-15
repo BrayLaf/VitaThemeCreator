@@ -6,14 +6,24 @@ how to run it.
 ## Grounding rule
 
 This app reimplements a legacy tool (`../ThemeBUILDER`, a Windows PySimpleGUI
-app). Every domain-logic decision — image dimensions, fit/crop behavior, the
+app) — [AntHJ/ThemeBUILDER](https://github.com/AntHJ/ThemeBUILDER) upstream.
+Full credit to AntHJ: this codebase exists on top of their reverse-engineering
+of the Vita theme format, not independent research, and that origin belongs
+in the README's intro, not just here. A second sibling repo,
+`../Sony-ThemeTool` — [LiEnby/Sony-ThemeTool](https://github.com/LiEnby/Sony-ThemeTool),
+a decompile of Sony's own official ThemeTool — is the other ground-truth
+source in this codebase: `audioConversion.ts`'s `.at9` header validation is
+a byte-exact port of its `BgmChecker.cs`/`At9FileHeader.cs`/`RiffChunk.cs`/
+`FormatChunk.cs`/`At9Chunk.cs`. Credit to LiEnby for that decompile too.
+Every domain-logic decision — image dimensions, fit/crop behavior, the
 `theme.xml` schema, icon slot names, audio encode parameters, packaging
 layout — must trace back to `../ThemeBUILDER/DOMAIN_LOGIC_ANALYSIS.md` (or,
 for anything the report didn't cover, direct inspection of `Theme.py`/
-`Icon.py`, or a real theme folder produced by the legacy tool). Don't invent
-plausible-sounding behavior for anything Vita-specific — check the report,
-check the source, or ask. Genuinely open questions get a `DECISION (date):`
-doc comment recording what was chosen and why, not a silent guess.
+`Icon.py`, `../Sony-ThemeTool`'s decompiled sources, or a real theme folder
+produced by the legacy tool). Don't invent plausible-sounding behavior for
+anything Vita-specific — check the report, check the source, or ask.
+Genuinely open questions get a `DECISION (date):` doc comment recording what
+was chosen and why, not a silent guess.
 
 When the report's own citations are ambiguous (e.g. coordinate math in
 `Theme.py`'s PySimpleGUI `draw_*` calls, where axis/anchor semantics aren't
@@ -80,6 +90,17 @@ per-slot PNGs) against what this app produces before touching any code.
   though `buildRootDir` itself is usually the relative literal `'Created
   Themes'` — a relative path breaks `pathToFileURL` when the renderer loads
   a summary's thumbnail through `themefile://`.
+- `src/renderer/src/components/common/ImageCropper.tsx` — interactive
+  drag-to-pan/scroll-to-zoom cover-fit crop editor for a fixed-dimension
+  image frame. Notification icons always use it (120×110, with a live guide
+  overlay from ThemeBUILDER's own `LAnotemsk.png` showing what the Vita's
+  info-bar badge actually reveals); the lockscreen and page-background slots
+  get it as an opt-in `FitModeToggle.tsx` alternative to the original tool's
+  forced-stretch default (`CroppableImageSlot`, `shared/types/imageSlots.ts`).
+  The crop math (`coverLayoutPx`, `renderer/src/lib/imageCrop.ts`) is shared
+  verbatim by three consumers so they never drift: this editor, the read-only
+  live-preview counterpart `CroppedImageLayer.tsx`, and the export-time
+  `writeCoverFitCropPng` (`main/modules/imageConversion.ts`).
 - `src/renderer/src/components/IconSetCreatorPage.tsx` — a standalone
   17-icon builder reachable from the landing page without opening a theme
   project. Shares `IconGenerationChoice` state and UI
