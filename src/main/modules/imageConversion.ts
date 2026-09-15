@@ -1,25 +1,28 @@
 /**
- * Image resize/compress/mask operations for theme image slots.
+ * Image resize/compress operations for theme image slots.
  *
  * Ports the behavior currently implemented by scale.bat (WIA `Scale` filter)
  * + ImageMagick `convert`/`composite` + pngquant, per
  * DOMAIN_LOGIC_ANALYSIS.md §2 and §7, using `sharp`: `.resize(w, h, { fit:
- * 'fill' })` for forced-stretch slots, `.resize({ height, fit: 'inside' })`
- * for the aspect-preserved notification-icon slot, and
- * `.composite([{ input: maskBuffer, blend: 'dest-in' }])` for the
- * CopyOpacity-style alpha masking. PNG compression (the pngquant
- * replacement) is `sharp`'s built-in `.png({ palette: true })`, which uses
- * the same libimagequant engine pngquant itself is built on.
+ * 'fill' })` for forced-stretch slots (distorts to exactly fill the frame,
+ * never cropped — the live preview's `.preview-bg-image` CSS must use
+ * `object-fit: fill` to match, not `cover`), and a cover-fit `.resize` +
+ * `.extract` crop for the notification-icon slot (see the
+ * `NotificationIconImageSlot` DECISION note, shared/types/imageSlots.ts).
+ * PNG compression (the pngquant replacement) is `sharp`'s built-in `.png({
+ * palette: true })`, which uses the same libimagequant engine pngquant
+ * itself is built on.
  */
 import sharp, { type OverlayOptions } from 'sharp'
 import {
   IMAGE_SPECS,
   type ClockPosition,
   type ClockSettings,
+  type ImageCrop,
   type InfoBarColorSettings,
   type PackageThumbnailSources
 } from '@shared/types'
-import { LOCKSCREEN_PREVIEW_OVERLAY_PATH, MASK_NOT_PATH } from '../resourcePaths'
+import { LOCKSCREEN_PREVIEW_OVERLAY_PATH } from '../resourcePaths'
 
 /** Absolute path to a produced PNG file. */
 export type ImageOutputPath = string
@@ -37,37 +40,119 @@ async function writeForcedStretchPng(
 }
 
 /**
- * 960×512 forced stretch, PNG, pngquant-compressed.
+ * Cover-fits the source image onto a fixed `width`×`height` frame, cropped
+ * by a user-adjustable zoom + focal point (`crop`) — the shared math behind
+ * both `CroppableImageSlot`'s opt-in "crop" fit mode and the
+ * notification-icon slot's always-on cropping (see both types' DECISION
+ * notes, shared/types/imageSlots.ts). `flatten`, when given, drops the
+ * alpha channel onto that background color instead of preserving it —
+ * the notification-icon slot's shipped format never has one.
+ */
+async function writeCoverFitCropPng(
+  sourcePath: string,
+  width: number,
+  height: number,
+  crop: ImageCrop,
+  outputPath: string,
+  flatten?: { r: number; g: number; b: number }
+): Promise<void> {
+  const { width: srcWidth, height: srcHeight } = await sharp(sourcePath).metadata()
+  if (!srcWidth || !srcHeight) {
+    throw new Error(`writeCoverFitCropPng: could not read dimensions of ${sourcePath}`)
+  }
+
+  const zoom = Math.max(1, crop.zoom)
+  const coverScale = Math.max(width / srcWidth, height / srcHeight) * zoom
+  const scaledWidth = Math.max(width, Math.round(srcWidth * coverScale))
+  const scaledHeight = Math.max(height, Math.round(srcHeight * coverScale))
+
+  const focusX = Math.min(1, Math.max(0, crop.focusX))
+  const focusY = Math.min(1, Math.max(0, crop.focusY))
+  const left = Math.min(
+    scaledWidth - width,
+    Math.max(0, Math.round(focusX * scaledWidth - width / 2))
+  )
+  const top = Math.min(
+    scaledHeight - height,
+    Math.max(0, Math.round(focusY * scaledHeight - height / 2))
+  )
+
+  let pipeline = sharp(sourcePath)
+    .resize(scaledWidth, scaledHeight, { fit: 'fill' })
+    .extract({ left, top, width, height })
+  if (flatten) pipeline = pipeline.flatten({ background: flatten })
+  await pipeline.png({ palette: true }).toFile(outputPath)
+}
+
+/**
+ * 960×512, PNG, pngquant-compressed — forced-stretch by default, or
+ * cover-fit cropped by a user-adjustable zoom + focal point when `crop` is
+ * given (`CroppableImageSlot.fitMode === 'crop'`; a pure authoring
+ * convenience this app adds — either path ends in a plain resize to
+ * 960×512, so the on-device result is always Theme.py's own shape).
  * Report ref: §2 table row "Lockscreen"; Theme.py:2529-2532.
  */
 export async function convertLockscreenImage(
   sourcePath: string,
+  crop: ImageCrop | null,
   outputPath: string
 ): Promise<ImageOutputPath> {
   const { width, height } = IMAGE_SPECS.lockscreen.dimensions
-  await writeForcedStretchPng(sourcePath, width, height, outputPath)
+  if (crop) {
+    await writeCoverFitCropPng(sourcePath, width, height, crop, outputPath)
+  } else {
+    await writeForcedStretchPng(sourcePath, width, height, outputPath)
+  }
   return outputPath
 }
 
 /**
  * Produces both the 960×512 main background and the 360×192 thumbnail for
- * one page, both forced stretch, both pngquant-compressed. Takes two
- * independent source paths (the project's data model allows a separately
- * chosen thumbnail source, unlike the original tool which always derived
- * the thumbnail from the same source as the main background — callers that
- * want the original's behavior should pass the same path for both).
+ * one page, each independently forced-stretch or cover-fit cropped (see
+ * `convertLockscreenImage`'s doc comment), both pngquant-compressed. Takes
+ * two independent source paths (the project's data model allows a
+ * separately chosen thumbnail source, unlike the original tool which always
+ * derived the thumbnail from the same source as the main background —
+ * callers that want the original's behavior should pass the same path for
+ * both).
  * Report ref: §2 table row "Page background (×10)"; Theme.py:2536-2643.
  */
 export async function convertPageBackground(
   sources: { main: string; thumbnail: string },
+  crops: { main: ImageCrop | null; thumbnail: ImageCrop | null },
   pageIndex: number,
   outputPaths: { main: string; thumbnail: string }
 ): Promise<{ main: ImageOutputPath; thumbnail: ImageOutputPath }> {
   try {
     const main = IMAGE_SPECS.pageBackgroundMain.dimensions
     const thumb = IMAGE_SPECS.pageBackgroundThumbnail.dimensions
-    await writeForcedStretchPng(sources.main, main.width, main.height, outputPaths.main)
-    await writeForcedStretchPng(sources.thumbnail, thumb.width, thumb.height, outputPaths.thumbnail)
+    if (crops.main) {
+      await writeCoverFitCropPng(
+        sources.main,
+        main.width,
+        main.height,
+        crops.main,
+        outputPaths.main
+      )
+    } else {
+      await writeForcedStretchPng(sources.main, main.width, main.height, outputPaths.main)
+    }
+    if (crops.thumbnail) {
+      await writeCoverFitCropPng(
+        sources.thumbnail,
+        thumb.width,
+        thumb.height,
+        crops.thumbnail,
+        outputPaths.thumbnail
+      )
+    } else {
+      await writeForcedStretchPng(
+        sources.thumbnail,
+        thumb.width,
+        thumb.height,
+        outputPaths.thumbnail
+      )
+    }
     return outputPaths
   } catch (error) {
     throw new Error(`failed converting page ${pageIndex} background: ${(error as Error).message}`)
@@ -75,43 +160,22 @@ export async function convertPageBackground(
 }
 
 /**
- * Scales to max-height 110px (aspect preserved), centers onto a 120×110
- * transparent canvas, then alpha-masks against mask_not.png (upscaled 3×
- * from its bundled 40×37 — see the `IMAGE_SPECS.notificationIcon` DECISION
- * comment) via CopyOpacity compose, then pngquant-compresses.
- * Report ref: §2 table row "Notification icon"; Theme.py:1063-1066,
- * 1283-1291, 2649-2650.
+ * Cover-fits the source image onto the flat, opaque 120×110 notification-
+ * icon frame, cropped by a user-adjustable zoom + focal point (`crop`), then
+ * flattens (no alpha channel — see the `NotificationIconImageSlot` DECISION
+ * note, imageSlots.ts, for why this isn't an alpha-masked pill: a real
+ * exported theme's shipped notices.png/notice.png are both flat 120×110
+ * PNGs with no alpha channel, and the on-device circular reveal happens live
+ * in the Vita firmware, not in this file's pixels) and pngquant-compresses.
+ * Report ref: §2 table row "Notification icon"; Theme.py:1063-1066, 2649-2650.
  */
 export async function convertNotificationIcon(
   sourcePath: string,
-  _variant: 'noNotice' | 'newNotice',
+  crop: ImageCrop,
   outputPath: string
 ): Promise<ImageOutputPath> {
-  const { maxHeight, maskDimensions } = IMAGE_SPECS.notificationIcon
-  const resized = await sharp(sourcePath)
-    .resize({ height: maxHeight, fit: 'inside' })
-    .png()
-    .toBuffer()
-
-  const mask = await sharp(MASK_NOT_PATH())
-    .resize(maskDimensions.width, maskDimensions.height, { fit: 'fill' })
-    .toBuffer()
-
-  await sharp({
-    create: {
-      width: maskDimensions.width,
-      height: maskDimensions.height,
-      channels: 4,
-      background: { r: 0, g: 0, b: 0, alpha: 0 }
-    }
-  })
-    .composite([
-      { input: resized, gravity: 'center' },
-      { input: mask, blend: 'dest-in' }
-    ])
-    .png({ palette: true })
-    .toFile(outputPath)
-
+  const { width, height } = IMAGE_SPECS.notificationIcon.dimensions
+  await writeCoverFitCropPng(sourcePath, width, height, crop, outputPath, { r: 0, g: 0, b: 0 })
   return outputPath
 }
 

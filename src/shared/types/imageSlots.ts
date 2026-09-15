@@ -16,34 +16,92 @@ export interface ImageSourceRef {
   sourcePath: string | null
 }
 
-// ---------------------------------------------------------------------------
-// Lockscreen — 960×512 forced stretch, PNG, pngquant-compressed.
-// Source ref: Theme.py:2529-2532
-// ---------------------------------------------------------------------------
-export type LockscreenImageSlot = ImageSourceRef
+/** Cover-fit zoom + focal point for positioning a source image within a fixed target frame. */
+export interface ImageCrop {
+  /** >=1. 1 = the smallest scale that fully covers the frame with no extra zoom. */
+  zoom: number
+  /** 0-1 fractional focal point within the scaled image that aligns to the frame's center. 0.5/0.5 = centered. */
+  focusX: number
+  focusY: number
+}
 
-// ---------------------------------------------------------------------------
-// Page background — one of 10 pages. Each has a 960×512 main image and a
-// 360×192 thumbnail, both forced stretch. Source ref: Theme.py:2536-2643.
-// ---------------------------------------------------------------------------
-export interface PageBackgroundImageSlot {
-  /** Full-size background, 960×512 forced. */
-  main: ImageSourceRef
-  /** Home-screen page-picker thumbnail, 360×192 forced. */
-  thumbnail: ImageSourceRef
+export const DEFAULT_IMAGE_CROP: ImageCrop = {
+  zoom: 1,
+  focusX: 0.5,
+  focusY: 0.5
+}
+
+export type ImageFitMode = 'stretch' | 'crop'
+
+/**
+ * A slot whose source image can either be force-stretched (distorted to
+ * exactly fill the target frame — the original tool's only behavior for
+ * these slots, and still the default here: see the `ResizeFit` DECISION
+ * note, common.ts) or cover-cropped via a user-adjustable zoom + focal point
+ * (`ImageCrop`, the same mechanism `NotificationIconImageSlot` uses). This
+ * is purely an authoring convenience this app adds on top of the original —
+ * either mode still ends in a plain force-resize to the exact target
+ * dimensions (`writeForcedStretchPng`/`writeCoverFitCrop`,
+ * imageConversion.ts), so the on-disk/on-device result is exactly the shape
+ * Theme.py always produced; `fitMode` only changes what gets fed into that
+ * final resize.
+ */
+export interface CroppableImageSlot {
+  sourcePath: string | null
+  fitMode: ImageFitMode
+  crop: ImageCrop
 }
 
 // ---------------------------------------------------------------------------
-// Notification icons — "no notice" and "new notice" bubble icons. Scaled to
-// max-height 110px with aspect preserved, then alpha-masked to the 120×110
-// pill shape via mask_not.png (CopyOpacity compose) — see the
-// `IMAGE_SPECS.notificationIcon` DECISION comment for why this isn't 40×37.
-// Source ref: Theme.py:1063-1066, 1283-1291; written as notices.png/notice.png
-// at Theme.py:2649-2650.
+// Lockscreen — 960×512, force-stretch by default. Source ref: Theme.py:2529-2532.
 // ---------------------------------------------------------------------------
+export type LockscreenImageSlot = CroppableImageSlot
+
+// ---------------------------------------------------------------------------
+// Page background — one of 10 pages. Each has a 960×512 main image and a
+// 360×192 thumbnail, both force-stretch by default. Source ref: Theme.py:2536-2643.
+// ---------------------------------------------------------------------------
+export interface PageBackgroundImageSlot {
+  /** Full-size background, 960×512. */
+  main: CroppableImageSlot
+  /** Home-screen page-picker thumbnail, 360×192. */
+  thumbnail: CroppableImageSlot
+}
+
+// ---------------------------------------------------------------------------
+// Notification icons — "no notice" and "new notice" bubble icons.
+//
+// DECISION (2026-09-15): corrected against a real ThemeBUILDER-exported
+// theme's shipped notices.png/notice.png (both 120×110, no alpha channel —
+// confirmed with `sips`) plus the bundled default assets, which are
+// identically shaped: this is NOT an alpha-masked pill. The final shipped
+// file is a flat, fully opaque 120×110 image; mask_not.png (itself alpha-free
+// per `sips`) never clips it — Theme.py:2649-2650 (the actual export step for
+// a customized icon) just pngquant-compresses whatever `NOTI_inon`/`NOTI_inew`
+// already resolved to, no masking call at all. The `-alpha off -compose
+// CopyOpacity` calls at Theme.py:1283-1291 are the tool's own separate
+// 40×37 in-app preview-widget pipeline (see the `IMAGE_SPECS.notificationIcon`
+// note below), not the shipped-asset path.
+//
+// The actual on-device clipping happens live in the Vita firmware's info-bar
+// badge, which only reveals a roughly circular region toward the *upper
+// right* of the 120×110 frame — confirmed by rendering ThemeBUILDER's own
+// position-guide asset (`assets/preview/default/LAnotemsk.png`, bundled here
+// as `masks/notificationGuide.png`) that its own notification-icon editor
+// (`NOTIFICATION_EDIT`, Theme.py:843-1295) overlays while the user manually
+// pans/zooms their icon with UP/DOWN/LEFT/RIGHT + zoom buttons. `crop`
+// (`ImageCrop`, defined above — shared with the opt-in crop mode on
+// `CroppableImageSlot`) is this app's equivalent: a cover-fit zoom + focal
+// point the renderer's notification-icon cropper writes to and
+// `convertNotificationIcon` reads at export time, with the same guide asset
+// shown live as an overlay. Unlike `CroppableImageSlot`, there's no
+// "stretch" mode here — a 120×110 pill has no forced-stretch precedent to
+// preserve, so cropping is always on.
+// ---------------------------------------------------------------------------
+
 export interface NotificationIconImageSlot {
-  noNotice: ImageSourceRef
-  newNotice: ImageSourceRef
+  noNotice: ImageSourceRef & { crop: ImageCrop }
+  newNotice: ImageSourceRef & { crop: ImageCrop }
 }
 
 // ---------------------------------------------------------------------------
@@ -145,15 +203,14 @@ export const IMAGE_SPECS = {
    * Vita theme validator flags this app's 40×37 output as wrong, expecting
    * 120×110. 40×37 × 3 ≈ 120×110 almost exactly, so 40×37 is that preview
    * widget's own size, scaled down 3× from the real shipped asset. Fixed to
-   * 120×110; `mask_not.png` (still only bundled at 40×37 — no 3× asset
-   * exists) is upscaled at composite time in `convertNotificationIcon`.
+   * 120×110. See `NotificationIconImageSlot`'s DECISION note above for why
+   * `mask_not.png` does NOT clip this shape — the frame is a flat opaque
+   * rectangle, cropped by `ImageCrop`, not alpha-masked.
    */
   notificationIcon: {
-    /** Aspect-preserved scale bound (only height is constrained per §2). */
-    maxHeight: 110,
-    fit: 'aspect-preserved' as ResizeFit,
-    /** The mask (mask_not.png, upscaled 3× from its bundled 40×37) is what actually clips the final shape. */
-    maskDimensions: { width: 120, height: 110 } satisfies PixelDimensions
+    /** The on-disk frame — always exactly this size, fully opaque, no letterboxing. */
+    dimensions: { width: 120, height: 110 } satisfies PixelDimensions,
+    fit: 'cover-with-pan' as ResizeFit
   },
   systemIcon: {
     dimensions: { width: 128, height: 128 } satisfies PixelDimensions,

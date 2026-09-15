@@ -41,6 +41,7 @@ import { ICON_LABELS } from '../../data/icons'
 import { waveTileColor, wavePatternBackground } from '../../data/wavePattern'
 import { withAlpha, toFileUrl } from '../../lib/uiHelpers'
 import { IconTile } from '../common/IconTile'
+import { CroppedImageLayer } from '../common/CroppedImageLayer'
 
 const PAGE_INDICES: PageIndex[] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
@@ -72,7 +73,7 @@ export function HomePreview({
   const page = project.pages[selectedPage - 1]
   const time = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })
   const fontColor = `#${page.colors.fontColor}`
-  const bgPath = page.images.main.sourcePath
+  const bgImage = page.images.main
 
   return (
     <div className="preview-home">
@@ -92,8 +93,16 @@ export function HomePreview({
       </div>
 
       <div className="preview-home-content">
-        {bgPath ? (
-          <img className="preview-bg-image" src={toFileUrl(bgPath)} alt="" />
+        {bgImage.sourcePath ? (
+          bgImage.fitMode === 'crop' ? (
+            <CroppedImageLayer
+              className="preview-bg-image"
+              sourcePath={bgImage.sourcePath}
+              crop={bgImage.crop}
+            />
+          ) : (
+            <img className="preview-bg-image" src={toFileUrl(bgImage.sourcePath)} alt="" />
+          )
         ) : (
           // No background image set for this page — the Vita firmware
           // itself draws the page's m_waveType pattern in that case (§5),

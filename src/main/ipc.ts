@@ -30,14 +30,16 @@ import {
 import { themebuilderAssetPath } from './resourcePaths'
 
 export function registerIpcHandlers(): void {
-  ipcMain.handle(IPC_CHANNELS.convertLockscreenImage, (_event, sourcePath, outputPath) =>
-    convertLockscreenImage(sourcePath, outputPath)
+  ipcMain.handle(IPC_CHANNELS.convertLockscreenImage, (_event, sourcePath, crop, outputPath) =>
+    convertLockscreenImage(sourcePath, crop, outputPath)
   )
-  ipcMain.handle(IPC_CHANNELS.convertPageBackground, (_event, sources, pageIndex, outputPaths) =>
-    convertPageBackground(sources, pageIndex, outputPaths)
+  ipcMain.handle(
+    IPC_CHANNELS.convertPageBackground,
+    (_event, sources, crops, pageIndex, outputPaths) =>
+      convertPageBackground(sources, crops, pageIndex, outputPaths)
   )
-  ipcMain.handle(IPC_CHANNELS.convertNotificationIcon, (_event, sourcePath, variant, outputPath) =>
-    convertNotificationIcon(sourcePath, variant, outputPath)
+  ipcMain.handle(IPC_CHANNELS.convertNotificationIcon, (_event, sourcePath, crop, outputPath) =>
+    convertNotificationIcon(sourcePath, crop, outputPath)
   )
   ipcMain.handle(IPC_CHANNELS.generatePackageThumbnail, (_event, mode, sources, outputPath) =>
     generatePackageThumbnail(mode, sources, outputPath)

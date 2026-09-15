@@ -16,6 +16,7 @@ import type {
   IconGenerationChoice,
   IconSetSelection,
   IconSlotKey,
+  ImageCrop,
   InfoBarColorSettings,
   PackageThumbnailMode,
   PackageThumbnailSources,
@@ -26,17 +27,18 @@ import type {
 
 export interface ThemeBuilderApi {
   // imageConversion.ts
-  convertLockscreenImage(sourcePath: string, outputPath: string): Promise<string>
+  convertLockscreenImage(
+    sourcePath: string,
+    crop: ImageCrop | null,
+    outputPath: string
+  ): Promise<string>
   convertPageBackground(
     sources: { main: string; thumbnail: string },
+    crops: { main: ImageCrop | null; thumbnail: ImageCrop | null },
     pageIndex: number,
     outputPaths: { main: string; thumbnail: string }
   ): Promise<{ main: string; thumbnail: string }>
-  convertNotificationIcon(
-    sourcePath: string,
-    variant: 'noNotice' | 'newNotice',
-    outputPath: string
-  ): Promise<string>
+  convertNotificationIcon(sourcePath: string, crop: ImageCrop, outputPath: string): Promise<string>
   generatePackageThumbnail(
     mode: PackageThumbnailMode,
     sources: PackageThumbnailSources,

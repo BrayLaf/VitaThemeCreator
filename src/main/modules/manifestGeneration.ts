@@ -156,8 +156,15 @@ export function serializeManifestXml(manifest: ThemeManifest): string {
   bar.ele('m_newNoticeFilePath').txt(manifest.infomationBarProperty.newNoticeFilePath)
 
   const home = doc.ele('HomeProperty')
+  // Theme.py:2385-2465 opens a single <m_bgParam> and writes all ten
+  // <BackgroundParam> blocks as siblings inside it, closing it once at the
+  // end — NOT a fresh <m_bgParam> wrapper per page. A real exported theme
+  // (../ThemeBUILDER output via the psvt site) confirms this shape; the
+  // Vita firmware silently mis-shifts/drops pages when given per-page
+  // <m_bgParam> wrappers instead.
+  const bgParamGroup = home.ele('m_bgParam')
   for (const page of manifest.homeProperty.bgParam) {
-    const bg = home.ele('m_bgParam').ele('BackgroundParam')
+    const bg = bgParamGroup.ele('BackgroundParam')
     if (page.thumbnailFilePath) bg.ele('m_thumbnailFilePath').txt(page.thumbnailFilePath)
     if (page.imageFilePath) bg.ele('m_imageFilePath').txt(page.imageFilePath)
     bg.ele('m_waveType').txt(String(page.waveType))

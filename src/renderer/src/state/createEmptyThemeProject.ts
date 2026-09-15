@@ -4,16 +4,27 @@
  * validated or written to disk (that's `saveThemeProject`, step 3).
  */
 import {
+  DEFAULT_IMAGE_CROP,
   ICON_SLOT_KEYS,
+  type CroppableImageSlot,
   type IconSlotKey,
   type IconGenerationChoice,
+  type NotificationIconImageSlot,
   type PageProject,
   type ThemeProject,
   type Tuple10
 } from '@shared/types'
 
-function emptyImageSourceRef(): { sourcePath: string | null } {
-  return { sourcePath: null }
+/** Forced-stretch is the default fit mode — see the `ResizeFit` DECISION note, shared/types/common.ts. */
+function emptyCroppableImageSlot(): CroppableImageSlot {
+  return { sourcePath: null, fitMode: 'stretch', crop: { ...DEFAULT_IMAGE_CROP } }
+}
+
+function emptyNotificationIcons(): NotificationIconImageSlot {
+  return {
+    noNotice: { sourcePath: null, crop: { ...DEFAULT_IMAGE_CROP } },
+    newNotice: { sourcePath: null, crop: { ...DEFAULT_IMAGE_CROP } }
+  }
 }
 
 /** Matches Icon.py's own real first-run defaults (Icon.py:89,106: `icon1col = 'White'`, `icon1bgc = 'None.'`) — a valid, real bundled swatch from the start, never an empty name nothing resolves to. */
@@ -27,7 +38,7 @@ function emptyIconChoice(): IconGenerationChoice {
 function emptyPage(): PageProject {
   return {
     colors: { waveType: 0, fontColor: 'ffffff', fontShadow: true },
-    images: { main: emptyImageSourceRef(), thumbnail: emptyImageSourceRef() }
+    images: { main: emptyCroppableImageSlot(), thumbnail: emptyCroppableImageSlot() }
   }
 }
 
@@ -64,9 +75,9 @@ export function createEmptyThemeProject(): ThemeProject {
     clock: { color: 'ffffff', position: 0 },
     notificationColors: { boxColor: '000000', textColor: 'ffffff' },
     infoBarColors: { barColor: '000000', indicatorColor: 'ffffff' },
-    lockscreenImage: emptyImageSourceRef(),
+    lockscreenImage: emptyCroppableImageSlot(),
     pages: emptyPages(),
-    notificationIcons: { noNotice: emptyImageSourceRef(), newNotice: emptyImageSourceRef() },
+    notificationIcons: emptyNotificationIcons(),
     iconSet: emptyIconSet(),
     audio: { kind: 'default-bundled', sourcePath: null },
     packageThumbnail: { mode: 'auto-collage', customImage: null },
