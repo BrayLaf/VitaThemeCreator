@@ -63,6 +63,19 @@ export interface PackageThumbnailSlot {
   customImage: ImageSourceRef | null
 }
 
+/**
+ * Source data `generatePackageThumbnail` needs to actually build the image,
+ * shaped by `mode`. Split out from `PackageThumbnailSlot` (project state)
+ * since the auto-collage mode needs already-converted page background
+ * output paths, not raw project state.
+ */
+export interface PackageThumbnailSources {
+  /** Required when mode === 'auto-collage': 4 built page background images, arranged top-left/top-right/bottom-left/bottom-right. */
+  collagePageImagePaths?: [string, string, string, string]
+  /** Required when mode === 'custom-image'. */
+  customImagePath?: string
+}
+
 // ---------------------------------------------------------------------------
 // VitaShell live-preview screenshots — preview_lockscreen.png, preview_page.png.
 // 480×272 forced stretch, or captured directly from a mounted Vita's

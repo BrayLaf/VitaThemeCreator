@@ -1,18 +1,17 @@
 /**
  * Editor panel for the home-screen background music. Report §3: four input
  * branches, all producing `bgm.at9` (144kbps, whole-file loop). Real
- * encoding happens in `convertAudioTrack` (main-process stub) — this panel
- * only captures the user's chosen source.
+ * encoding happens in `convertAudioTrack` (main-process module).
  */
 import type { AudioSourceKind } from '@shared/types'
 import { useThemeProject } from '../../state/useThemeProject'
-import { FilePathField } from '../common/FilePathField'
+import { FileDropzone } from '../common/FileDropzone'
 
 const SOURCE_LABELS: Record<AudioSourceKind, string> = {
-  'at9-passthrough': 'Existing .at9 file',
-  wav: 'WAV file (encoded to ATRAC9)',
-  mp3: 'MP3 file (transcoded, then encoded to ATRAC9)',
-  'default-bundled': 'Use default bundled track'
+  'default-bundled': 'Bundled default',
+  'at9-passthrough': 'Existing .at9',
+  wav: 'WAV',
+  mp3: 'MP3'
 }
 
 export function AudioPanel(): React.JSX.Element {
@@ -22,25 +21,32 @@ export function AudioPanel(): React.JSX.Element {
   return (
     <section className="panel">
       <h2>Audio</h2>
-      <p className="panel-description">Produces a single bgm.at9, 144kbps, whole-track loop.</p>
+      <p className="panel-description">
+        Optional background music, looped on the home screen. Produces a single bgm.at9, 144kbps,
+        whole-track loop.
+      </p>
 
-      <label className="field field-inline">
-        <span className="field-label">Source</span>
-        <select
-          value={kind}
-          onChange={(e) => setAudio({ kind: e.target.value as AudioSourceKind, sourcePath: null })}
-        >
-          {(Object.keys(SOURCE_LABELS) as AudioSourceKind[]).map((k) => (
-            <option key={k} value={k}>
-              {SOURCE_LABELS[k]}
-            </option>
-          ))}
-        </select>
-      </label>
+      <div className="panel-eyebrow">SOURCE</div>
+      <div className="chip-row">
+        {(Object.keys(SOURCE_LABELS) as AudioSourceKind[]).map((k) => (
+          <button
+            key={k}
+            type="button"
+            className={kind === k ? 'chip chip-active' : 'chip'}
+            onClick={() => setAudio({ kind: k, sourcePath: null })}
+          >
+            {SOURCE_LABELS[k]}
+          </button>
+        ))}
+      </div>
 
-      {kind !== 'default-bundled' && (
-        <FilePathField
-          label="Audio file"
+      {kind === 'default-bundled' ? (
+        <p className="panel-description">Uses the bundled default track, no file needed.</p>
+      ) : (
+        <FileDropzone
+          label=""
+          hint="mp3/wav/at9 · loops seamlessly"
+          kind="audio"
           value={sourcePath}
           onChange={(newPath) => setAudio({ sourcePath: newPath })}
         />

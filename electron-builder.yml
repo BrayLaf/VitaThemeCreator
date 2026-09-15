@@ -9,8 +9,14 @@ files:
   - '!{.eslintcache,eslint.config.mjs,.prettierignore,.prettierrc.yaml,dev-app-update.yml,CHANGELOG.md,README.md}'
   - '!{.env,.env.*,.npmrc,pnpm-lock.yaml}'
   - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}'
+  - '!resources/themebuilder-assets{,/**/*}'
+extraResources:
+  - from: resources/themebuilder-assets
+    to: themebuilder-assets
 asarUnpack:
   - resources/**
+  - '**/*.node'
+  - node_modules/ffmpeg-static/**
 win:
   executableName: vita-theme-creator
 nsis:

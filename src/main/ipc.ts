@@ -18,22 +18,30 @@ import { convertAudioTrack } from './modules/audioConversion'
 import { generateManifest, serializeManifestXml } from './modules/manifestGeneration'
 import { buildThemeFolder, packageTheme } from './modules/packaging'
 import { loadThemeProject, saveThemeProject } from './modules/projectPersistence'
+import {
+  pickAudioFile,
+  pickImageFile,
+  pickProjectOpenPath,
+  pickProjectSavePath
+} from './modules/dialogs'
 
 export function registerIpcHandlers(): void {
   ipcMain.handle(IPC_CHANNELS.convertLockscreenImage, (_event, sourcePath, outputPath) =>
     convertLockscreenImage(sourcePath, outputPath)
   )
-  ipcMain.handle(IPC_CHANNELS.convertPageBackground, (_event, sourcePath, pageIndex, outputPaths) =>
-    convertPageBackground(sourcePath, pageIndex, outputPaths)
+  ipcMain.handle(IPC_CHANNELS.convertPageBackground, (_event, sources, pageIndex, outputPaths) =>
+    convertPageBackground(sources, pageIndex, outputPaths)
   )
   ipcMain.handle(IPC_CHANNELS.convertNotificationIcon, (_event, sourcePath, variant, outputPath) =>
     convertNotificationIcon(sourcePath, variant, outputPath)
   )
-  ipcMain.handle(IPC_CHANNELS.generatePackageThumbnail, (_event, mode, outputPath) =>
-    generatePackageThumbnail(mode, outputPath)
+  ipcMain.handle(IPC_CHANNELS.generatePackageThumbnail, (_event, mode, sources, outputPath) =>
+    generatePackageThumbnail(mode, sources, outputPath)
   )
-  ipcMain.handle(IPC_CHANNELS.generatePreviewScreenshot, (_event, source, outputPath) =>
-    generatePreviewScreenshot(source, outputPath)
+  ipcMain.handle(
+    IPC_CHANNELS.generatePreviewScreenshot,
+    (_event, source, sourceImagePath, outputPath) =>
+      generatePreviewScreenshot(source, sourceImagePath, outputPath)
   )
 
   ipcMain.handle(IPC_CHANNELS.compositeSystemIcon, (_event, slot, choice, outputPath) =>
@@ -64,5 +72,12 @@ export function registerIpcHandlers(): void {
   )
   ipcMain.handle(IPC_CHANNELS.saveThemeProject, (_event, project, projectFilePath) =>
     saveThemeProject(project, projectFilePath)
+  )
+
+  ipcMain.handle(IPC_CHANNELS.pickImageFile, () => pickImageFile())
+  ipcMain.handle(IPC_CHANNELS.pickAudioFile, () => pickAudioFile())
+  ipcMain.handle(IPC_CHANNELS.pickProjectOpenPath, () => pickProjectOpenPath())
+  ipcMain.handle(IPC_CHANNELS.pickProjectSavePath, (_event, defaultName) =>
+    pickProjectSavePath(defaultName)
   )
 }

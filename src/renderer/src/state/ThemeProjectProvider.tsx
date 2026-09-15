@@ -26,6 +26,7 @@ export function ThemeProjectProvider({ children }: { children: ReactNode }): Rea
 
     return {
       project,
+      loadProject: (next) => setProject(next),
       setMeta: (patch) => setProject((prev) => ({ ...prev, meta: { ...prev.meta, ...patch } })),
       setClock: (patch) => setProject((prev) => ({ ...prev, clock: { ...prev.clock, ...patch } })),
       setNotificationColors: (patch) =>

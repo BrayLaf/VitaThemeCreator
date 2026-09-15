@@ -17,6 +17,7 @@ import type {
 
 export interface ThemeProjectContextValue {
   project: ThemeProject
+  loadProject: (project: ThemeProject) => void
   setMeta: (patch: Partial<ThemeProjectMeta>) => void
   setClock: (patch: Partial<ClockSettings>) => void
   setNotificationColors: (patch: Partial<NotificationColorSettings>) => void
