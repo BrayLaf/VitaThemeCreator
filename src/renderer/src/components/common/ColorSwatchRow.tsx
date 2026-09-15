@@ -32,7 +32,7 @@ export function ColorSwatchRow({
               background: `#${hex}`,
               boxShadow:
                 value.toLowerCase() === hex.toLowerCase()
-                  ? 'inset 0 0 0 2px #101318, 0 0 0 2px var(--accent)'
+                  ? '0 0 0 2px #0b1a2c, 0 0 0 3.5px var(--accent), 0 0 18px rgba(0,210,255,.5)'
                   : 'inset 0 0 0 1px rgba(255,255,255,.14)'
             }}
             onClick={() => onChange(hex)}
