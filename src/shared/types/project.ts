@@ -20,6 +20,7 @@ import type {
   NotificationIconImageSlot,
   PackageThumbnailSlot,
   PageBackgroundSlots,
+  PageIndicatorImageSlot,
   PreviewScreenshotSlot
 } from './imageSlots'
 import type { IconSetSelection } from './icons'
@@ -48,6 +49,7 @@ export interface ThemeProject {
   lockscreenImage: LockscreenImageSlot
   pages: Tuple10<PageProject>
   notificationIcons: NotificationIconImageSlot
+  pageIndicator: PageIndicatorImageSlot
   iconSet: IconSetSelection
 
   audio: AudioSourceConfig

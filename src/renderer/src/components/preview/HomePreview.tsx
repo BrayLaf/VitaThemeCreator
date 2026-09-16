@@ -25,7 +25,11 @@
  * Page indicator: a vertical dot strip on the left edge, centered
  * vertically — matches the real Vita's LiveArea (Theme.py's own preview
  * never draws a page indicator at all, so this is sourced from the device
- * itself, not the legacy tool), not a bottom dot bar.
+ * itself, not the legacy tool), not a bottom dot bar. Renders the user's
+ * actual basePage.png/curPage.png (`project.pageIndicator`) when set, the
+ * same way the LiveArea would, instead of always showing the flat-color
+ * placeholder dot — see the `PageIndicatorImageSlot` DECISION note,
+ * imageSlots.ts.
  *
  * Icon layout: the Vita's LiveArea packs icons as circular "bubbles" in a
  * honeycomb pattern — rows of alternating length 3/4/3 (centered, so the
@@ -93,6 +97,8 @@ export function HomePreview({
   const fontColor = `#${page.colors.fontColor}`
   const bgImage = page.images.main
   const newNoticePath = project.notificationIcons.newNotice.sourcePath
+  const basePageIconPath = project.pageIndicator.basePage.sourcePath
+  const curPageIconPath = project.pageIndicator.curPage.sourcePath
 
   return (
     <div className="preview-home">
@@ -154,18 +160,28 @@ export function HomePreview({
       </div>
 
       <div className="preview-page-dots">
-        {PAGE_INDICES.map((n) => (
-          <button
-            key={n}
-            type="button"
-            aria-label={`Page ${n}`}
-            className="preview-page-dot"
-            onClick={() => onSelectPage(n)}
-            style={{
-              background: n === selectedPage ? fontColor : withAlpha(fontColor, 0.35)
-            }}
-          />
-        ))}
+        {PAGE_INDICES.map((n) => {
+          const isCurrent = n === selectedPage
+          const iconPath = isCurrent ? curPageIconPath : basePageIconPath
+          return (
+            <button
+              key={n}
+              type="button"
+              aria-label={`Page ${n}`}
+              className="preview-page-dot"
+              onClick={() => onSelectPage(n)}
+              style={
+                iconPath
+                  ? undefined
+                  : { background: isCurrent ? fontColor : withAlpha(fontColor, 0.35) }
+              }
+            >
+              {iconPath && (
+                <img className="preview-page-dot-image" src={toFileUrl(iconPath)} alt="" />
+              )}
+            </button>
+          )
+        })}
       </div>
     </div>
   )

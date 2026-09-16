@@ -28,6 +28,7 @@ import {
   convertLockscreenImage,
   convertNotificationIcon,
   convertPageBackground,
+  convertPageIndicatorImage,
   generateLockscreenPreviewScreenshot,
   generatePackageThumbnail,
   generatePreviewScreenshot
@@ -136,8 +137,24 @@ export async function buildThemeFolder(
     join(buildFolderPath, 'notice.png')
   )
 
-  await copyFile(BASE_PAGE_ASSET_PATH(), join(buildFolderPath, 'basePage.png'))
-  await copyFile(CUR_PAGE_ASSET_PATH(), join(buildFolderPath, 'curPage.png'))
+  // A custom page-indicator source falls back to the bundled default asset
+  // when unset — see the `PageIndicatorImageSlot` DECISION note (imageSlots.ts).
+  if (project.pageIndicator.basePage.sourcePath) {
+    await convertPageIndicatorImage(
+      project.pageIndicator.basePage.sourcePath,
+      join(buildFolderPath, 'basePage.png')
+    )
+  } else {
+    await copyFile(BASE_PAGE_ASSET_PATH(), join(buildFolderPath, 'basePage.png'))
+  }
+  if (project.pageIndicator.curPage.sourcePath) {
+    await convertPageIndicatorImage(
+      project.pageIndicator.curPage.sourcePath,
+      join(buildFolderPath, 'curPage.png')
+    )
+  } else {
+    await copyFile(CUR_PAGE_ASSET_PATH(), join(buildFolderPath, 'curPage.png'))
+  }
 
   await Promise.all(
     ICON_SLOT_KEYS.map((slot) =>
@@ -187,7 +204,22 @@ export async function buildThemeFolder(
     )
   }
 
-  if (project.previewScreenshots.source === 'captured-from-device') {
+  // Each of the two VitaShell preview screenshots independently defaults to
+  // this app's own generated stand-in, or can be a user-uploaded custom
+  // image — see the `PreviewImageSlot` doc comment (imageSlots.ts) for why
+  // this per-image custom override is real ported behavior (Theme.py's own
+  // Extra Tools `-LSPRE-`/`-LAPRE-` FileBrowse), not an addition.
+  const lockscreenPreview = project.previewScreenshots.lockscreen
+  if (lockscreenPreview.source === 'custom-image') {
+    await generatePreviewScreenshot(
+      'custom-image',
+      requireSourcePath(
+        lockscreenPreview.customImage?.sourcePath ?? null,
+        'Lockscreen preview custom image'
+      ),
+      join(buildFolderPath, 'preview_lockscreen.png')
+    )
+  } else if (lockscreenPreview.source === 'captured-from-device') {
     await generatePreviewScreenshot(
       'captured-from-device',
       null,
@@ -201,13 +233,26 @@ export async function buildThemeFolder(
       join(buildFolderPath, 'preview_lockscreen.png')
     )
   }
-  const firstAvailablePageImage =
-    builtPageMainPaths.find((p): p is string => p !== null) ?? DEFAULT_PAGE_BACKGROUND_PATH()
-  await generatePreviewScreenshot(
-    project.previewScreenshots.source,
-    project.previewScreenshots.source === 'generated' ? firstAvailablePageImage : null,
-    join(buildFolderPath, 'preview_page.png')
-  )
+
+  const homePagePreview = project.previewScreenshots.homePage
+  if (homePagePreview.source === 'custom-image') {
+    await generatePreviewScreenshot(
+      'custom-image',
+      requireSourcePath(
+        homePagePreview.customImage?.sourcePath ?? null,
+        'Home page preview custom image'
+      ),
+      join(buildFolderPath, 'preview_page.png')
+    )
+  } else {
+    const firstAvailablePageImage =
+      builtPageMainPaths.find((p): p is string => p !== null) ?? DEFAULT_PAGE_BACKGROUND_PATH()
+    await generatePreviewScreenshot(
+      homePagePreview.source,
+      homePagePreview.source === 'generated' ? firstAvailablePageImage : null,
+      join(buildFolderPath, 'preview_page.png')
+    )
+  }
 
   await saveThemeProject(project, join(buildFolderPath, PROJECT_FILE_NAME))
 

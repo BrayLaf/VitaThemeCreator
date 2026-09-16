@@ -1303,6 +1303,14 @@
     transform 0.18s ease;
 }
 
+.preview-page-dot-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  pointer-events: none;
+}
+
 /* -------------------------------------------------------------- landing */
 
 .landing {

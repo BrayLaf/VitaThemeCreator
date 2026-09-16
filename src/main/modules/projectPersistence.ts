@@ -11,7 +11,13 @@
  * project folder and never ships.
  */
 import { readFile, writeFile } from 'fs/promises'
-import { DEFAULT_IMAGE_CROP, type CroppableImageSlot, type ThemeProject } from '@shared/types'
+import {
+  DEFAULT_IMAGE_CROP,
+  type CroppableImageSlot,
+  type PreviewImageSlot,
+  type PreviewScreenshotSlot,
+  type ThemeProject
+} from '@shared/types'
 
 /** Bumped only if the on-disk project-file shape changes incompatibly. */
 const PROJECT_FILE_FORMAT_VERSION = 1
@@ -73,8 +79,37 @@ function withCropDefaults(project: ThemeProject): ThemeProject {
         ...project.notificationIcons.newNotice,
         crop: project.notificationIcons.newNotice.crop ?? { ...DEFAULT_IMAGE_CROP }
       }
-    }
+    },
+    // `pageIndicator` was added 2026-09-15 (see the `PageIndicatorImageSlot`
+    // DECISION note, imageSlots.ts) without bumping the format version, so a
+    // project.json saved before that is missing it entirely — default both
+    // slots to unset, which falls back to the bundled basePage.png/curPage.png
+    // at build time, matching what an old project already produced.
+    pageIndicator: project.pageIndicator ?? {
+      basePage: { sourcePath: null },
+      curPage: { sourcePath: null }
+    },
+    previewScreenshots: withPreviewScreenshotsDefaults(project.previewScreenshots)
   }
+}
+
+/**
+ * `previewScreenshots` was reshaped 2026-09-15 from a single flat
+ * `{ source }` applied to both preview images at once into an independent
+ * `{ lockscreen, homePage }` pair (see the `PreviewImageSlot` doc comment,
+ * imageSlots.ts — this mirrors the original's own per-image
+ * `-LSPRE-`/`-LAPRE-` custom-image override) — without bumping the format
+ * version. A pre-reshape project.json still has the old flat shape; apply
+ * its single `source` to both new slots rather than failing to load.
+ */
+function withPreviewScreenshotsDefaults(raw: unknown): PreviewScreenshotSlot {
+  if (raw && typeof raw === 'object' && 'lockscreen' in raw && 'homePage' in raw) {
+    return raw as PreviewScreenshotSlot
+  }
+  const legacySource =
+    (raw as { source?: PreviewImageSlot['source'] } | undefined)?.source ?? 'generated'
+  const slot: PreviewImageSlot = { source: legacySource, customImage: null }
+  return { lockscreen: { ...slot }, homePage: { ...slot } }
 }
 
 /**

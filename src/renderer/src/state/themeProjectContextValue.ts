@@ -11,6 +11,8 @@ import type {
   PackageThumbnailSlot,
   PageColorSettings,
   PageIndex,
+  PageIndicatorImageSlot,
+  PreviewImageSlot,
   PreviewScreenshotSlot,
   ThemeProject,
   ThemeProjectMeta
@@ -34,10 +36,14 @@ export interface ThemeProjectContextValue {
     variant: 'noNotice' | 'newNotice',
     patch: Partial<NotificationIconImageSlot['noNotice']>
   ) => void
+  setPageIndicatorImage: (variant: keyof PageIndicatorImageSlot, sourcePath: string | null) => void
   setIconChoice: (slot: IconSlotKey, choice: IconGenerationChoice) => void
   setAudio: (patch: Partial<AudioSourceConfig>) => void
   setPackageThumbnail: (patch: Partial<PackageThumbnailSlot>) => void
-  setPreviewScreenshots: (patch: Partial<PreviewScreenshotSlot>) => void
+  setPreviewScreenshot: (
+    variant: keyof PreviewScreenshotSlot,
+    patch: Partial<PreviewImageSlot>
+  ) => void
 }
 
 export const ThemeProjectContext = createContext<ThemeProjectContextValue | null>(null)

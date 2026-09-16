@@ -20,7 +20,7 @@ import type {
   InfoBarColorSettings,
   PackageThumbnailMode,
   PackageThumbnailSources,
-  PreviewScreenshotSource,
+  PreviewImageSource,
   ThemeManifest,
   ThemeProject
 } from './types'
@@ -45,7 +45,7 @@ export interface ThemeBuilderApi {
     outputPath: string
   ): Promise<string>
   generatePreviewScreenshot(
-    source: PreviewScreenshotSource,
+    source: PreviewImageSource,
     sourceImagePath: string | null,
     outputPath: string
   ): Promise<string>

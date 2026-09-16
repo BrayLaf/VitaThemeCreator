@@ -5,6 +5,12 @@
  * / pageBackgroundThumbnail; `CroppableImageSlot`). Per-page wave pattern,
  * font color, and font-shadow live here too (§5 <m_bgParam>).
  *
+ * Also hosts the page-indicator dots (basePage.png/curPage.png, 22×22,
+ * `PageIndicatorImageSlot`) — a single global pair shared by all 10 pages,
+ * not per-page state, but grouped here since it's the same LiveArea concept.
+ * See the DECISION note in imageSlots.ts: the original tool never exposed
+ * these as customizable.
+ *
  * `selectedPage` is lifted to EditorShell so the live preview's page-dot
  * row and this panel always point at the same page.
  */
@@ -27,10 +33,11 @@ export function PageBackgroundsPanel({
   selectedPage: PageIndex
   onSelectPage: (page: PageIndex) => void
 }): React.JSX.Element {
-  const { project, setPageColors, setPageImage } = useThemeProject()
+  const { project, setPageColors, setPageImage, setPageIndicatorImage } = useThemeProject()
   const page = project.pages[selectedPage - 1]
   const mainSpec = IMAGE_SPECS.pageBackgroundMain.dimensions
   const thumbSpec = IMAGE_SPECS.pageBackgroundThumbnail.dimensions
+  const indicatorSpec = IMAGE_SPECS.pageIndicator.dimensions
 
   const applyToAllPages = (): void => {
     for (const index of PAGE_INDICES) {
@@ -47,6 +54,32 @@ export function PageBackgroundsPanel({
         background image is optional — the wave pattern is what the Vita itself draws behind the
         page (and during page-swipe transitions) when no image is set, not a layer on top of one.
       </p>
+
+      <div className="panel-eyebrow">PAGE INDICATOR (ALL PAGES)</div>
+      <p className="panel-description">
+        The dot strip shown on the LiveArea marking which of the 10 pages is selected. Optional —
+        leave either empty to keep the default dot.
+      </p>
+      <div className="two-col">
+        <FileDropzone
+          label="Unselected page"
+          hint={`${indicatorSpec.width}×${indicatorSpec.height} · png/jpg`}
+          kind="image"
+          compact
+          value={project.pageIndicator.basePage.sourcePath}
+          onChange={(sourcePath) => setPageIndicatorImage('basePage', sourcePath)}
+        />
+        <FileDropzone
+          label="Current page"
+          hint={`${indicatorSpec.width}×${indicatorSpec.height} · png/jpg`}
+          kind="image"
+          compact
+          value={project.pageIndicator.curPage.sourcePath}
+          onChange={(sourcePath) => setPageIndicatorImage('curPage', sourcePath)}
+        />
+      </div>
+
+      <div className="panel-divider" />
 
       <div className="panel-eyebrow">PAGE</div>
       <div className="chip-grid chip-grid-5">
