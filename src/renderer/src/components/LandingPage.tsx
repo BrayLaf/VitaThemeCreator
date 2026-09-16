@@ -9,6 +9,13 @@
 import { useState } from 'react'
 import type { ThemeProject } from '@shared/types'
 import { cleanIpcErrorMessage } from '../lib/uiHelpers'
+import { AppMark } from './common/AppMark'
+import {
+  CreateThemeIcon,
+  LoadEditThemeIcon,
+  CreateIconSetIcon,
+  ManageThemesIcon
+} from './common/Icons'
 
 export function LandingPage({
   onCreateTheme,
@@ -37,7 +44,9 @@ export function LandingPage({
 
   return (
     <div className="landing">
-      <div className="landing-mark" />
+      <div className="landing-mark">
+        <AppMark variant="full" />
+      </div>
       <h1 className="landing-title">Vita Theme Creator</h1>
       <p className="landing-subtitle">
         Build a PS Vita LiveArea theme, put together a system icon set, or manage what you&apos;ve
@@ -46,22 +55,30 @@ export function LandingPage({
 
       <div className="landing-grid">
         <button type="button" className="landing-card" onClick={onCreateTheme}>
-          <span className="landing-card-glyph">✦</span>
+          <span className="landing-card-glyph">
+            <CreateThemeIcon />
+          </span>
           <span className="landing-card-title">Create theme</span>
           <span className="landing-card-desc">Start a new blank theme project.</span>
         </button>
         <button type="button" className="landing-card" onClick={() => void handleLoadTheme()}>
-          <span className="landing-card-glyph">▤</span>
+          <span className="landing-card-glyph">
+            <LoadEditThemeIcon />
+          </span>
           <span className="landing-card-title">Load / edit theme</span>
           <span className="landing-card-desc">Open an existing theme project file.</span>
         </button>
         <button type="button" className="landing-card" onClick={onCreateIconSet}>
-          <span className="landing-card-glyph">⬚</span>
+          <span className="landing-card-glyph">
+            <CreateIconSetIcon />
+          </span>
           <span className="landing-card-title">Create icon set</span>
           <span className="landing-card-desc">Build a standalone 17-icon system set.</span>
         </button>
         <button type="button" className="landing-card" onClick={onManageThemes}>
-          <span className="landing-card-glyph">☰</span>
+          <span className="landing-card-glyph">
+            <ManageThemesIcon />
+          </span>
           <span className="landing-card-title">Manage created themes</span>
           <span className="landing-card-desc">
             Edit, delete, or re-export themes you&apos;ve built.

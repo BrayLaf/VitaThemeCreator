@@ -14,9 +14,13 @@
  * Status bar content/order (icon cluster ending in the clock, right-
  * aligned, nothing on the left) mirrors Theme.py:2208's own preview draw
  * call — a single string "o)) ... [] ... 12:00" (signal, battery, time)
- * right-anchored in the bar. There's no "Page N of 10" text on a real
- * status bar; that was this app's own fabricated debug label — the page
- * number lives in the page-dot indicator instead, same as real hardware.
+ * right-anchored in the bar. `StatusBarOverlay` renders that same cluster
+ * with real SVG icons instead of Theme.py's ASCII-art stand-ins (it could
+ * only draw literal text onto its preview canvas) — shared verbatim with
+ * `LockscreenPreview`, since Theme.py draws this identical bar on both of
+ * its preview canvases. There's no "Page N of 10" text on a real status
+ * bar; that was this app's own fabricated debug label — the page number
+ * lives in the page-dot indicator instead, same as real hardware.
  *
  * Page indicator: a vertical dot strip on the left edge, centered
  * vertically — matches the real Vita's LiveArea (Theme.py's own preview
@@ -35,6 +39,19 @@
  * job is just to show what a page's background/wave/text-color looks like
  * with icons sitting on top of it, capped at the real 10-icon/3-4-3 layout
  * limit — so the same first-10 icon slots render on every page, every time.
+ *
+ * Notification icon (inline in the status bar's right cluster, after the
+ * battery icon): per Theme.py:2211-2213, the LiveArea preview always draws a
+ * small notice/newNotice icon at the top-right corner of its own canvas
+ * (`Image_NoteNO`/`Image_NoteNEW` — the same `notificationIcons` assets used
+ * by the lockscreen's wide notification bubble), and a real exported
+ * `preview_page.png` the user supplied confirms it sits inline with the
+ * clock/battery cluster, not as an oversized floating badge — this is
+ * LiveArea-only in the legacy tool; the lockscreen shows its notification as
+ * the separate wide bubble instead (`LockscreenPreview`), never this small
+ * icon. Always renders the "new notice" asset here, matching
+ * `LockscreenPreview`'s own choice to always preview the "has a
+ * notification" demo state.
  */
 import { ICON_SLOT_KEYS, type IconSlotKey, type PageIndex, type ThemeProject } from '@shared/types'
 import { ICON_LABELS } from '../../data/icons'
@@ -42,6 +59,7 @@ import { waveTileColor, wavePatternBackground } from '../../data/wavePattern'
 import { withAlpha, toFileUrl } from '../../lib/uiHelpers'
 import { IconTile } from '../common/IconTile'
 import { CroppedImageLayer } from '../common/CroppedImageLayer'
+import { StatusBarOverlay } from './StatusBarOverlay'
 
 const PAGE_INDICES: PageIndex[] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
@@ -74,23 +92,16 @@ export function HomePreview({
   const time = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })
   const fontColor = `#${page.colors.fontColor}`
   const bgImage = page.images.main
+  const newNoticePath = project.notificationIcons.newNotice.sourcePath
 
   return (
     <div className="preview-home">
-      <div
-        className="preview-status-bar"
-        style={{
-          background: `#${project.infoBarColors.barColor}`,
-          color: `#${project.infoBarColors.indicatorColor}`
-        }}
-      >
-        <div className="preview-status-right">
-          <span>▮▮▯</span>
-          <span>⌁</span>
-          <span className="preview-status-battery">84%</span>
-          <span className="preview-status-time">{time}</span>
-        </div>
-      </div>
+      <StatusBarOverlay
+        infoBarColors={project.infoBarColors}
+        time={time}
+        showHome
+        noticeIconPath={newNoticePath ?? ''}
+      />
 
       <div className="preview-home-content">
         {bgImage.sourcePath ? (

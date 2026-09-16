@@ -39,7 +39,7 @@ export function ColorSettingsPanel(): React.JSX.Element {
               <div className="clock-position-map">
                 <div
                   className="clock-position-dot"
-                  style={{ ...p.dot, background: on ? 'var(--accent)' : '#3a404b' }}
+                  style={{ ...p.dot, background: on ? 'var(--accent)' : 'var(--text-4)' }}
                 />
               </div>
               <span>{p.label}</span>

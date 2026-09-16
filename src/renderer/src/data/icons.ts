@@ -116,8 +116,8 @@ export function iconTileBackground(choice: IconGenerationChoice): CSSProperties 
     if (swatch?.hex) return { background: swatch.hex }
     return {
       backgroundImage:
-        'repeating-linear-gradient(45deg,#20242c 0 6px,#181b21 6px 12px,#20242c 12px 18px,#181b21 18px 24px)'
+        'repeating-linear-gradient(45deg,#0d2038 0 6px,#0a1730 6px 12px,#0d2038 12px 18px,#0a1730 18px 24px)'
     }
   }
-  return { background: '#20242c' }
+  return { background: '#0d2038' }
 }

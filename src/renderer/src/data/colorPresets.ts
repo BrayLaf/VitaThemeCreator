@@ -2,32 +2,32 @@
 import type { HexColor6 } from '@shared/types'
 
 export const NOTIFICATION_BOX_PRESETS: readonly HexColor6[] = [
-  '7a9dff',
-  'e0e4ec',
-  'f0a65c',
-  '65c89b',
-  'c77ad8'
+  '0a2240',
+  '0056b3',
+  '00a896',
+  'f8f9fa',
+  '00d2ff'
 ]
 export const NOTIFICATION_TEXT_PRESETS: readonly HexColor6[] = [
-  'e9edf6',
-  '0c0f14',
-  '7a9dff',
-  'f0a65c',
-  '65c89b'
+  'f8f9fa',
+  '00d2ff',
+  '38c6e8',
+  '00a896',
+  '0056b3'
 ]
 export const PAGE_TEXT_PRESETS: readonly HexColor6[] = [
-  'e9edf6',
-  '0c0f14',
-  '7a9dff',
-  'f0a65c',
-  '65c89b'
+  'f8f9fa',
+  '00d2ff',
+  '38c6e8',
+  '00a896',
+  '0056b3'
 ]
 export const CLOCK_COLOR_PRESETS: readonly HexColor6[] = [
-  'ffffff',
-  '0c0f14',
-  '7a9dff',
-  'f0a65c',
-  'c77ad8'
+  'f8f9fa',
+  '00d2ff',
+  '38c6e8',
+  '00a896',
+  '0056b3'
 ]
-export const STATUS_BG_PRESETS: readonly HexColor6[] = ['0d1017', 'e9edf6', '1d2740', '2a1d2e']
-export const STATUS_FG_PRESETS: readonly HexColor6[] = ['e9edf6', '0c0f14', '7a9dff', 'f0a65c']
+export const STATUS_BG_PRESETS: readonly HexColor6[] = ['0a2240', '0056b3', '00a896', 'f8f9fa']
+export const STATUS_FG_PRESETS: readonly HexColor6[] = ['f8f9fa', '00d2ff', '38c6e8', '00a896']

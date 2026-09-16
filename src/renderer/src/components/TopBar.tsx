@@ -7,6 +7,7 @@
  */
 import { useRef, useState } from 'react'
 import { useThemeProject } from '../state/useThemeProject'
+import { AppMark } from './common/AppMark'
 
 export function TopBar({
   onBuildExport,
@@ -57,7 +58,9 @@ export function TopBar({
   return (
     <div className="topbar">
       <div className="topbar-left">
-        <div className="topbar-mark" />
+        <div className="topbar-mark">
+          <AppMark />
+        </div>
         <div className="topbar-title">Vita Theme Creator</div>
         <div className="topbar-divider" />
         <div className="topbar-badge">

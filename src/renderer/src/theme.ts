@@ -3,4 +3,4 @@
  * field of `ThemeProject`. The Vita theme's own colors (clock, notification,
  * status bar, page text) live in shared/types/colorSettings.ts instead.
  */
-export const ACCENT = '#7a9dff'
+export const ACCENT = '#00d2ff'

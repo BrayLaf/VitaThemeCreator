@@ -1,6 +1,6 @@
 export interface SectionDef<T extends string> {
   id: T
-  glyph: string
+  icon: React.ComponentType
   label: string
 }
 
@@ -22,7 +22,9 @@ export function SectionNav<T extends string>({
           className={s.id === active ? 'section-item section-item-active' : 'section-item'}
           onClick={() => onSelect(s.id)}
         >
-          <div className="section-item-glyph">{s.glyph}</div>
+          <div className="section-item-glyph">
+            <s.icon />
+          </div>
           <div className="section-item-label">{s.label}</div>
         </button>
       ))}

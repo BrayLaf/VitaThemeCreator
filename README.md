@@ -2,8 +2,13 @@
 
 A desktop app (Electron + React + TypeScript) for building custom home-screen
 themes for the PlayStation Vita — a modern, cross-platform reimplementation of
-the community tool ThemeBUILDER, which was Windows-only and built on
-PySimpleGUI/Tkinter.
+the community tool [ThemeBUILDER](https://github.com/AntHJ/ThemeBUILDER) by
+[AntHJ](https://github.com/AntHJ), which was Windows-only and built on
+PySimpleGUI/Tkinter. This app exists because of ThemeBUILDER: its domain
+logic (image dimensions, the `theme.xml` schema, icon slots, audio encode
+parameters, packaging layout) is the entire foundation this codebase is
+built on top of — full credit to AntHJ for the original tool and for
+reverse-engineering the Vita theme format in the first place.
 
 Every piece of domain logic here (image dimensions, the `theme.xml` manifest
 schema, ATRAC9 audio encoding, icon generation, packaging) is grounded in a
@@ -11,6 +16,13 @@ reverse-engineering pass over the original tool's source, written up at
 [`../ThemeBUILDER/DOMAIN_LOGIC_ANALYSIS.md`](../ThemeBUILDER/DOMAIN_LOGIC_ANALYSIS.md).
 See that report for the "why" behind anything that looks unusual — and see
 [`CLAUDE.md`](./CLAUDE.md) for the engineering conventions this codebase follows.
+
+Also credited: [LiEnby/Sony-ThemeTool](https://github.com/LiEnby/Sony-ThemeTool),
+a decompile of Sony's own official ThemeTool. It's the second load-bearing
+source this app is grounded in — the `.at9` header validation in
+`audioConversion.ts` (`convertAudioTrack`'s passthrough branch) is ported
+byte-exact from its `BgmChecker.cs`/`At9FileHeader.cs`/`RiffChunk.cs`/
+`FormatChunk.cs`/`At9Chunk.cs`.
 
 ## What it does
 
@@ -28,6 +40,11 @@ See that report for the "why" behind anything that looks unusual — and see
   wave-pattern page backgrounds, the lockscreen's page-lip preview overlay,
   and the system icons all render from the legacy tool's own bundled art,
   not an approximation.
+- Every image slot can be either stretched to fit (the original tool's only
+  option) or cropped, via an interactive drag-to-pan/scroll-to-zoom cover-fit
+  editor (`ImageCropper`) whose crop math is shared exactly between the
+  editor, the live preview (`CroppedImageLayer`), and the export pipeline —
+  what you see while adjusting a crop is exactly what ships.
 - Builds and exports a real, installable theme package: converted/masked
   PNGs at every required size, a generated `theme.xml`, composited system
   icons, an ATRAC9 `bgm.at9`, and a zipped `.zip` matching the community
@@ -37,8 +54,9 @@ See that report for the "why" behind anything that looks unusual — and see
 ## Project status
 
 Scaffolding, the full domain-logic port (image/audio/icon conversion,
-manifest generation, packaging), an initial UI/preview design pass, and the
-landing page / theme library / standalone icon-set creator are done. Native
+manifest generation, packaging), an initial UI/preview design pass, the
+landing page / theme library / standalone icon-set creator, and a
+crop/zoom image editor for every optional image slot are done. Native
 ATRAC9 encoding (WAV/MP3 → `.at9`) requires the bundled Windows
 `at9tool.exe`, run directly on Windows or through Wine elsewhere — see
 `src/main/modules/audioConversion.ts` for the full explanation. `.at9`
@@ -46,10 +64,16 @@ passthrough and the bundled default track work on every platform.
 
 A theme built and validated against a real third-party PS Vita theme
 validator surfaced two domain-logic corrections against the original
-report: notification icons ship at 120×110, not 40×37, and `theme.xml` omits
-a page's background-file references entirely when no image is set (rather
-than pointing at a `bgN.png` that's never generated) — see CLAUDE.md's
-"Known corrections against the domain report" for the evidence trail.
+report: notification icons ship at 120×110, not 40×37, and `theme.xml`
+omits a page's background-file references entirely when no image is set
+(rather than pointing at a `bgN.png` that's never generated) — see
+CLAUDE.md's "Known corrections against the domain report" for the evidence
+trail. The same validation pass also caught two implementation bugs (not
+report mismatches): `theme.xml` was serializing one `<m_bgParam>` per page
+instead of one holding all ten `<BackgroundParam>` siblings, corrupting
+page backgrounds on-device, and notification icons were being alpha-masked
+onto a transparent canvas with a mask file that has no alpha channel — both
+fixed.
 
 Every optional image slot (lockscreen, notification icons, a page's
 background, the package thumbnail's collage tiles) has a real fallback
@@ -115,6 +139,13 @@ src/
     components/common/IconChoiceEditor.tsx   the glyph-style + background controls for one
                                               icon slot, shared by SystemIconsPanel and
                                               IconSetCreatorPage
+    components/common/ImageCropper.tsx   interactive drag-to-pan/scroll-to-zoom cover-fit
+                                          crop editor, used by notification icons (always
+                                          cropped) and opt-in for the lockscreen/page
+                                          backgrounds ("Crop to fill" via FitModeToggle.tsx)
+    components/common/CroppedImageLayer.tsx   read-only live-preview counterpart to
+                                               ImageCropper, sharing its exact crop math
+                                               (lib/imageCrop.ts) with the export pipeline
     lib/themebuilderAssets.ts   resolves resources/themebuilder-assets/ paths for the
                                 renderer (one IPC round trip, cached) + builds themefile:// URLs
     state/                 ThemeProject React context + update actions

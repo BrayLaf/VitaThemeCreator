@@ -10,16 +10,24 @@ import { ColorSettingsPanel } from './panels/ColorSettingsPanel'
 import { AudioPanel } from './panels/AudioPanel'
 import { ExportPanel } from './panels/ExportPanel'
 import { useThemeProject } from '../state/useThemeProject'
+import {
+  LockscreenSectionIcon,
+  PagesSectionIcon,
+  SystemIconsSectionIcon,
+  ColorsClockSectionIcon,
+  AudioSectionIcon,
+  ExportSectionIcon
+} from './common/Icons'
 
 type SectionId = 'lock' | 'pages' | 'icons' | 'colors' | 'audio' | 'export'
 
 const SECTIONS: readonly SectionDef<SectionId>[] = [
-  { id: 'lock', glyph: '▤', label: 'Lockscreen' },
-  { id: 'pages', glyph: '▦', label: 'Pages' },
-  { id: 'icons', glyph: '⬚', label: 'System Icons' },
-  { id: 'colors', glyph: '◑', label: 'Colors & Clock' },
-  { id: 'audio', glyph: '♪', label: 'Audio' },
-  { id: 'export', glyph: '↥', label: 'Export' }
+  { id: 'lock', icon: LockscreenSectionIcon, label: 'Lockscreen' },
+  { id: 'pages', icon: PagesSectionIcon, label: 'Pages' },
+  { id: 'icons', icon: SystemIconsSectionIcon, label: 'System Icons' },
+  { id: 'colors', icon: ColorsClockSectionIcon, label: 'Colors & Clock' },
+  { id: 'audio', icon: AudioSectionIcon, label: 'Audio' },
+  { id: 'export', icon: ExportSectionIcon, label: 'Export' }
 ]
 
 /** Sections that pin the live-preview tab to one side (matches what each section edits). */

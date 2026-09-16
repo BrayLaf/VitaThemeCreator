@@ -18,6 +18,7 @@ import { IconChoiceEditor } from './common/IconChoiceEditor'
 import { IconTile } from './common/IconTile'
 import { ICON_LABELS } from '../data/icons'
 import { cleanIpcErrorMessage } from '../lib/uiHelpers'
+import { AppMark } from './common/AppMark'
 
 /** Sibling of `Created Themes/`/`Exported/` — same "generated output, gitignored" convention (.gitignore). */
 const ICON_SETS_DIR = 'Icon Sets'
@@ -58,7 +59,9 @@ export function IconSetCreatorPage({ onHome }: { onHome: () => void }): React.JS
     <div className="editor-shell">
       <div className="topbar">
         <div className="topbar-left">
-          <div className="topbar-mark" />
+          <div className="topbar-mark">
+            <AppMark />
+          </div>
           <div className="topbar-title">Vita Theme Creator</div>
           <div className="topbar-divider" />
           <div className="topbar-badge">

@@ -48,9 +48,9 @@ export function IconChoiceEditor({
                 background: swatch.hex ?? undefined,
                 backgroundImage: swatch.hex
                   ? undefined
-                  : 'repeating-linear-gradient(45deg,#20242c 0 5px,#181b21 5px 10px)',
+                  : 'repeating-linear-gradient(45deg,#0d2038 0 5px,#0a1730 5px 10px)',
                 boxShadow: on
-                  ? 'inset 0 0 0 2px #101318, 0 0 0 2px var(--accent)'
+                  ? '0 0 0 2px #0b1a2c, 0 0 0 3.5px var(--accent), 0 0 18px rgba(0,210,255,.5)'
                   : 'inset 0 0 0 1px rgba(255,255,255,.14)'
               }}
               onClick={() =>

@@ -29,11 +29,20 @@
  * screen-grabs that same widget). It is not part of the real device
  * lockscreen — only of the preview chrome — so it renders above the
  * background/clock/notification bubble here too.
+ *
+ * The top status-bar strip (`StatusBarOverlay`) is real device UI, not
+ * preview chrome — Theme.py's own lockscreen preview draws the identical
+ * bar-color rectangle + indicator-color text at the same spot
+ * (Theme.py:2165-2167), it just fakes the icon glyphs as literal text. It
+ * renders above the background/clock but below the bezel overlay, matching
+ * Theme.py's own draw order (rectangle+text at 2165-2167, before the
+ * notification-bubble draw further down that this app also layers above it).
  */
 import type { CSSProperties } from 'react'
 import type { ClockPosition, ThemeProject } from '@shared/types'
 import { toFileUrl } from '../../lib/uiHelpers'
 import { CroppedImageLayer } from '../common/CroppedImageLayer'
+import { StatusBarOverlay } from './StatusBarOverlay'
 import lockscreenOverlayUrl from '../../assets/lockscreen-preview-overlay.png'
 
 function clockAlignStyle(position: ClockPosition): CSSProperties {
@@ -49,7 +58,7 @@ export function LockscreenPreview({
   project: ThemeProject
   now: Date
 }): React.JSX.Element {
-  const { clock, notificationColors, notificationIcons, lockscreenImage } = project
+  const { clock, notificationColors, notificationIcons, lockscreenImage, infoBarColors } = project
   const time = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })
   const month = now.toLocaleDateString(undefined, { month: 'long' })
   const weekday = now.toLocaleDateString(undefined, { weekday: 'long' })
@@ -83,6 +92,8 @@ export function LockscreenPreview({
           {time}
         </div>
       </div>
+
+      <StatusBarOverlay infoBarColors={infoBarColors} time={time} variant="absolute" />
 
       <div className="preview-bubble" style={{ background: `#${notificationColors.boxColor}` }}>
         <div className="preview-bubble-icon">

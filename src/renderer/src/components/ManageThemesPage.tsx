@@ -9,6 +9,7 @@
 import { useEffect, useState } from 'react'
 import type { CreatedThemeSummary, ThemeProject } from '@shared/types'
 import { cleanIpcErrorMessage, toFileUrl } from '../lib/uiHelpers'
+import { AppMark } from './common/AppMark'
 
 const CREATED_THEMES_DIR = 'Created Themes'
 const EXPORTED_DIR = 'Exported'
@@ -92,7 +93,9 @@ export function ManageThemesPage({
     <div className="library">
       <div className="topbar">
         <div className="topbar-left">
-          <div className="topbar-mark" />
+          <div className="topbar-mark">
+            <AppMark />
+          </div>
           <div className="topbar-title">Created Themes</div>
         </div>
         <div className="topbar-right">
