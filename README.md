@@ -38,13 +38,21 @@ byte-exact from its `BgmChecker.cs`/`At9FileHeader.cs`/`RiffChunk.cs`/
   selected home page as you edit, corrected against real exported
   ThemeBUILDER output (not guessed from generic phone-UI conventions) — the
   wave-pattern page backgrounds, the lockscreen's page-lip preview overlay,
-  and the system icons all render from the legacy tool's own bundled art,
-  not an approximation.
+  the system icons, and a real status-bar strip (wifi/home/battery/
+  notification icons, grounded in an actual device screenshot rather than
+  the legacy tool's own text-only preview approximation) all render from
+  real evidence, not a guess.
 - Every image slot can be either stretched to fit (the original tool's only
   option) or cropped, via an interactive drag-to-pan/scroll-to-zoom cover-fit
   editor (`ImageCropper`) whose crop math is shared exactly between the
   editor, the live preview (`CroppedImageLayer`), and the export pipeline —
   what you see while adjusting a crop is exactly what ships.
+- The page-indicator dots (the small "which page am I on" markers on the
+  home screen) can be replaced with your own images — something the
+  original tool never exposed a UI for — and the two VitaShell/theme-store
+  preview screenshots (lockscreen and LiveArea) can each independently be
+  auto-generated or replaced with your own upload, matching the original's
+  own "Extra Tools" custom-preview override.
 - Builds and exports a real, installable theme package: converted/masked
   PNGs at every required size, a generated `theme.xml`, composited system
   icons, an ATRAC9 `bgm.at9`, and a zipped `.zip` matching the community
@@ -76,12 +84,21 @@ onto a transparent canvas with a mask file that has no alpha channel — both
 fixed.
 
 Every optional image slot (lockscreen, notification icons, a page's
-background, the package thumbnail's collage tiles) has a real fallback
-sourced from ThemeBUILDER's own bundled defaults — see
+background, the page-indicator dots, the package thumbnail's collage tiles)
+has a real fallback sourced from ThemeBUILDER's own bundled defaults — see
 `src/main/resourcePaths.ts`'s `DEFAULT_*_PATH` exports — so **Build & Export
 never fails just because an optional slot was left untouched**; a genuine
 failure (a corrupt source image, `.at9` encoding needing Wine) now surfaces
 as a clear in-app error banner instead of a console-only stack trace.
+
+The most recent pass added two customizations the original tool never
+exposed a UI for (page-indicator dots, `PageIndicatorImageSlot`) or only
+exposed through a one-off "Extra Tools" export dialog rather than the main
+editor (independent custom-image uploads for the lockscreen and LiveArea
+preview screenshots, `PreviewImageSlot`), plus a real status-bar overlay
+(wifi/home/battery/notification icons instead of a flat placeholder bar) for
+both live previews — see CLAUDE.md's "No missing-asset export failures"
+section for how each new slot's fallback behavior was decided.
 
 ## Project Setup
 
@@ -133,7 +150,10 @@ src/
                             and ManageThemesPage — the app boots to LandingPage, not a blank project
     components/LandingPage.tsx, IconSetCreatorPage.tsx, ManageThemesPage.tsx
     components/panels/    one editor panel per theme aspect
-    components/preview/   the live Vita-accurate device preview
+    components/preview/   the live Vita-accurate device preview, including
+                           StatusBarOverlay.tsx, the shared status-bar strip
+                           (wifi/home/battery/notification icons) both the
+                           lockscreen and home-page previews render
     components/common/IconTile.tsx   renders one system-icon tile from the real bundled
                                       background-swatch + glyph-overlay art
     components/common/IconChoiceEditor.tsx   the glyph-style + background controls for one

@@ -71,9 +71,15 @@ per-slot PNGs) against what this app produces before touching any code.
   color/glyph stand-in. One IPC round trip, cached for the session
   (`useThemebuilderAssetsRoot`) — see `components/common/IconTile.tsx`.
 - `src/renderer/src/components/preview/` — the live device preview
-  (`LockscreenPreview.tsx`, `HomePreview.tsx`). Every visual choice here
-  should be traceable to either the domain report or a real exported theme
-  folder — see the module-level doc comments for the specific citations.
+  (`LockscreenPreview.tsx`, `HomePreview.tsx`), sharing one
+  `StatusBarOverlay.tsx` for the top status-bar strip (wifi/home/battery/
+  notification icons) both screens draw so they can't drift apart. Every
+  visual choice here should be traceable to either the domain report or a
+  real exported theme folder — see the module-level doc comments for the
+  specific citations (`StatusBarOverlay.tsx`'s own icon layout is grounded in
+  a real device screenshot and exported `preview_page.png`, not the report,
+  since `Theme.py`'s own preview widget only fakes this cluster as a single
+  text string).
 - `src/renderer/src/App.tsx` — routes between four top-level screens
   (`LandingPage`, `EditorShell`, `IconSetCreatorPage`, `ManageThemesPage`),
   all sharing one `ThemeProjectProvider`. The app boots to `LandingPage`, not
@@ -138,13 +144,23 @@ what's actually true of the *original* tool:
   fallback in `Theme.py` (it would itself export a broken theme) — these use
   a bundled ThemeBUILDER default asset (`defaultLS.png`) or Icon.py's own
   real first-run default values (`glyphStyle: 'White'`,
-  background swatch `'None.'` — Icon.py:89,106) instead of failing.
+  background swatch `'None.'` — Icon.py:89,106) instead of failing. The
+  page-indicator dots (`basePage.png`/`curPage.png`, `PageIndicatorImageSlot`
+  in `imageSlots.ts`) are a variant of this: `Theme.py` always ships a
+  working pair (its own bundled `assets/preview/default/{base,curs}.png`,
+  copied verbatim) but exposes no UI to customize them at all, so this app
+  adds one — falling back to that same bundled pair when the user leaves
+  either slot unset, reproducing the original's always-shipped-something
+  behavior rather than introducing a new failure mode.
 
-When adding a new image/asset slot, ask which of these two shapes applies —
-don't add a third `requireSourcePath`-style hard failure for something that
-could default instead. `requireSourcePath` (`packaging.ts`) should only gate
-a slot with a genuinely deliberate user choice and no sensible default (e.g.
-a custom package-thumbnail image).
+When adding a new image/asset slot, ask which of these shapes applies —
+don't add a `requireSourcePath`-style hard failure for something that could
+default instead. `requireSourcePath` (`packaging.ts`) should only gate a
+slot with a genuinely deliberate user choice and no sensible default (e.g. a
+custom package-thumbnail image, or either VitaShell preview screenshot's
+`custom-image` mode — see `PreviewImageSlot`, `imageSlots.ts`: choosing that
+mode *is* the deliberate choice, so a missing image there is a real user
+error, not a case to silently default around).
 
 ## Known corrections against the domain report
 
