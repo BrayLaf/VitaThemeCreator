@@ -53,6 +53,11 @@ export function ThemeProjectProvider({ children }: { children: ReactNode }): Rea
             [variant]: { ...prev.notificationIcons[variant], ...patch }
           }
         })),
+      setPageIndicatorImage: (variant, sourcePath) =>
+        setProject((prev) => ({
+          ...prev,
+          pageIndicator: { ...prev.pageIndicator, [variant]: { sourcePath } }
+        })),
       setIconChoice: (slot, choice) =>
         setProject((prev) => ({ ...prev, iconSet: { ...prev.iconSet, [slot]: choice } })),
       setAudio: (patch) => setProject((prev) => ({ ...prev, audio: { ...prev.audio, ...patch } })),
@@ -61,10 +66,13 @@ export function ThemeProjectProvider({ children }: { children: ReactNode }): Rea
           ...prev,
           packageThumbnail: { ...prev.packageThumbnail, ...patch }
         })),
-      setPreviewScreenshots: (patch) =>
+      setPreviewScreenshot: (variant, patch) =>
         setProject((prev) => ({
           ...prev,
-          previewScreenshots: { ...prev.previewScreenshots, ...patch }
+          previewScreenshots: {
+            ...prev.previewScreenshots,
+            [variant]: { ...prev.previewScreenshots[variant], ...patch }
+          }
         }))
     }
   }, [project])

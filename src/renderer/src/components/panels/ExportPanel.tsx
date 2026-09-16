@@ -1,12 +1,12 @@
 /**
- * Export panel — theme metadata, the two export-time-only image slots
- * (package thumbnail §2, VitaShell preview screenshots §2), and the build
- * trigger. Report §6: build folder → zip (a plain zip, not a Vita-specific
- * container — see exportMeta.ts's BUILD_OUTPUT_FILENAME_CASING note, hence
- * "Build & Export .zip" below rather than ".vpk").
+ * Export panel — theme metadata, the export-time-only image slots (package
+ * thumbnail §2, the two independent VitaShell preview screenshots §2), and
+ * the build trigger. Report §6: build folder → zip (a plain zip, not a
+ * Vita-specific container — see exportMeta.ts's BUILD_OUTPUT_FILENAME_CASING
+ * note, hence "Build & Export .zip" below rather than ".vpk").
  */
 import { useState } from 'react'
-import type { PackageThumbnailMode, PreviewScreenshotSource } from '@shared/types'
+import type { PackageThumbnailMode, PreviewImageSlot, PreviewImageSource } from '@shared/types'
 import { useThemeProject } from '../../state/useThemeProject'
 import { FileDropzone } from '../common/FileDropzone'
 import { cleanIpcErrorMessage } from '../../lib/uiHelpers'
@@ -22,20 +22,77 @@ const THUMBNAIL_MODE_IMPLEMENTED: Record<PackageThumbnailMode, boolean> = {
   'live-capture': false
 }
 
-const PREVIEW_SOURCE_LABELS: Record<PreviewScreenshotSource, string> = {
+const PREVIEW_SOURCE_LABELS: Record<PreviewImageSource, string> = {
   generated: 'Generate from current art',
+  'custom-image': 'Custom image',
   'captured-from-device': 'Capture from a connected Vita'
 }
-const PREVIEW_SOURCE_IMPLEMENTED: Record<PreviewScreenshotSource, boolean> = {
+const PREVIEW_SOURCE_IMPLEMENTED: Record<PreviewImageSource, boolean> = {
   generated: true,
+  'custom-image': true,
   'captured-from-device': false
+}
+
+/**
+ * One of the two independent 480×272 preview-screenshot slots
+ * (`project.previewScreenshots.lockscreen`/`.homePage`) — same mode picker
+ * as the store thumbnail above, plus a custom-image dropzone. Matches the
+ * original's own per-image `-LSPRE-`/`-LAPRE-` override (see the
+ * `PreviewImageSlot` doc comment, imageSlots.ts).
+ */
+function PreviewImagePicker({
+  label,
+  slot,
+  onSourceChange,
+  onCustomImageChange
+}: {
+  label: string
+  slot: PreviewImageSlot
+  onSourceChange: (source: PreviewImageSource) => void
+  onCustomImageChange: (sourcePath: string | null) => void
+}): React.JSX.Element {
+  return (
+    <div>
+      <div className="panel-eyebrow">{label}</div>
+      <div className="chip-row chip-row-wrap">
+        {(Object.keys(PREVIEW_SOURCE_LABELS) as PreviewImageSource[]).map((source) => (
+          <button
+            key={source}
+            type="button"
+            disabled={!PREVIEW_SOURCE_IMPLEMENTED[source]}
+            className={
+              slot.source === source
+                ? 'chip chip-active'
+                : PREVIEW_SOURCE_IMPLEMENTED[source]
+                  ? 'chip'
+                  : 'chip chip-disabled'
+            }
+            title={PREVIEW_SOURCE_IMPLEMENTED[source] ? undefined : 'Not implemented yet'}
+            onClick={() => onSourceChange(source)}
+          >
+            {PREVIEW_SOURCE_LABELS[source]}
+          </button>
+        ))}
+      </div>
+      {slot.source === 'custom-image' && (
+        <FileDropzone
+          label=""
+          hint="480×272 · png/jpg"
+          kind="image"
+          compact
+          value={slot.customImage?.sourcePath ?? null}
+          onChange={onCustomImageChange}
+        />
+      )}
+    </div>
+  )
 }
 
 type ExportStatus =
   { kind: 'building' } | { kind: 'success'; zipPath: string } | { kind: 'error'; message: string }
 
 export function ExportPanel(): React.JSX.Element {
-  const { project, setMeta, setPackageThumbnail, setPreviewScreenshots } = useThemeProject()
+  const { project, setMeta, setPackageThumbnail, setPreviewScreenshot } = useThemeProject()
   const [status, setStatus] = useState<ExportStatus | null>(null)
 
   const handleExport = async (): Promise<void> => {
@@ -125,25 +182,27 @@ export function ExportPanel(): React.JSX.Element {
       <div className="panel-divider" />
 
       <div className="panel-eyebrow">VITASHELL PREVIEW SCREENSHOTS (480×272)</div>
-      <div className="chip-row chip-row-wrap">
-        {(Object.keys(PREVIEW_SOURCE_LABELS) as PreviewScreenshotSource[]).map((source) => (
-          <button
-            key={source}
-            type="button"
-            disabled={!PREVIEW_SOURCE_IMPLEMENTED[source]}
-            className={
-              project.previewScreenshots.source === source
-                ? 'chip chip-active'
-                : PREVIEW_SOURCE_IMPLEMENTED[source]
-                  ? 'chip'
-                  : 'chip chip-disabled'
-            }
-            title={PREVIEW_SOURCE_IMPLEMENTED[source] ? undefined : 'Not implemented yet'}
-            onClick={() => setPreviewScreenshots({ source })}
-          >
-            {PREVIEW_SOURCE_LABELS[source]}
-          </button>
-        ))}
+      <p className="panel-description">
+        Shown in VitaShell and the theme store before install. Each defaults to an auto-generated
+        preview, or upload your own screenshot for either.
+      </p>
+      <div className="two-col">
+        <PreviewImagePicker
+          label="LOCKSCREEN"
+          slot={project.previewScreenshots.lockscreen}
+          onSourceChange={(source) => setPreviewScreenshot('lockscreen', { source })}
+          onCustomImageChange={(sourcePath) =>
+            setPreviewScreenshot('lockscreen', { customImage: { sourcePath } })
+          }
+        />
+        <PreviewImagePicker
+          label="LIVE AREA"
+          slot={project.previewScreenshots.homePage}
+          onSourceChange={(source) => setPreviewScreenshot('homePage', { source })}
+          onCustomImageChange={(sourcePath) =>
+            setPreviewScreenshot('homePage', { customImage: { sourcePath } })
+          }
+        />
       </div>
 
       <button type="button" className="export-button" onClick={() => void handleExport()}>

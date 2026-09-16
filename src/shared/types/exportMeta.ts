@@ -15,6 +15,7 @@ export interface ThemeBuildOutputManifest {
   pageBackgrounds: string[] // bg1.png … bg10.png
   pageThumbnails: string[] // bg1t.png … bg10t.png
   notificationIcons: ['notice.png', 'notices.png']
+  /** Page-indicator dots — user-customizable (`PageIndicatorImageSlot`, imageSlots.ts), despite the name: kept as `staticAssets` since the original tool always copied these verbatim and the output filenames/shape never change. */
   staticAssets: ['basePage.png', 'curPage.png']
   systemIcons: string[] // icon_*.png × 17
   audio: 'bgm.at9'

@@ -180,6 +180,23 @@ export async function convertNotificationIcon(
 }
 
 /**
+ * 22×22, forced-stretch, pngquant-compressed — a custom page-indicator dot
+ * (basePage.png/curPage.png). See the `PageIndicatorImageSlot` DECISION
+ * note (imageSlots.ts) for why this is a deliberate addition beyond the
+ * original tool, not a ported behavior — the output shape matches exactly
+ * what Theme.py always shipped, just from a user-chosen source instead of
+ * its own bundled default.
+ */
+export async function convertPageIndicatorImage(
+  sourcePath: string,
+  outputPath: string
+): Promise<ImageOutputPath> {
+  const { width, height } = IMAGE_SPECS.pageIndicator.dimensions
+  await writeForcedStretchPng(sourcePath, width, height, outputPath)
+  return outputPath
+}
+
+/**
  * Escapes text for safe embedding in an SVG `<text>` node.
  */
 function escapeSvgText(text: string): string {
@@ -287,23 +304,31 @@ export async function generatePackageThumbnail(
 
 /**
  * Builds preview_page.png (480×272, forced stretch) by downscaling page 1's
- * already-built background, or captures one from a mounted Vita's
- * screenshot folder. (`preview_lockscreen.png` is NOT built this way — see
- * `generateLockscreenPreviewScreenshot` below, which bakes in the demo
- * clock text and page-lip overlay the way the original tool's own
- * screen-grab-based export actually does.)
+ * already-built background, scaling a user-supplied custom image, or
+ * capturing one from a mounted Vita's screenshot folder. (`preview_lockscreen.png`
+ * is NOT built the "generated" way — see `generateLockscreenPreviewScreenshot`
+ * below, which bakes in the demo clock text and page-lip overlay the way the
+ * original tool's own screen-grab-based export actually does; a custom
+ * lockscreen preview image goes through this same function instead, since
+ * it's already a finished image the user chose, not raw art to bake a clock
+ * onto.) `generated` and `custom-image` are processed identically here — a
+ * plain forced-stretch resize of whatever `sourceImagePath` is — since the
+ * only difference between them is which caller decided what that path is.
  * Report ref: §2 table row "VitaShell live preview screenshots";
- * Theme.py:2293-2296, 1304-1311, 2017-2031.
+ * Theme.py:2293-2296 ("generated" bake-in path), Theme.py:1297-1386
+ * (`EXTRA_TOOLS`'s `-LSPRE-`/`-LAPRE-` `FileBrowse` — the original's own
+ * custom-image override, confirming this isn't an invented mode), 2017-2031
+ * (device-capture detection).
  *
  * TODO: the mounted-device capture path needs a cross-platform volume
  * detection strategy (e.g. `drivelist`) to replace the original's
  * Windows-only drive-letter scan — see report §8 discard list. TODO:
- * preview_page.png similarly doesn't yet bake in the icons/labels/status
- * bar the original's own screen-grab includes — a plain background resize
- * for now.
+ * a "generated" preview_page.png similarly doesn't yet bake in the
+ * icons/labels/status bar the original's own screen-grab includes — a plain
+ * background resize for now.
  */
 export async function generatePreviewScreenshot(
-  source: 'generated' | 'captured-from-device',
+  source: 'generated' | 'custom-image' | 'captured-from-device',
   sourceImagePath: string | null,
   outputPath: string
 ): Promise<ImageOutputPath> {
@@ -313,7 +338,7 @@ export async function generatePreviewScreenshot(
     )
   }
   if (!sourceImagePath) {
-    throw new Error('generatePreviewScreenshot: generated mode requires sourceImagePath')
+    throw new Error(`generatePreviewScreenshot: ${source} mode requires sourceImagePath`)
   }
   const { width, height } = IMAGE_SPECS.previewScreenshot.dimensions
   await writeForcedStretchPng(sourceImagePath, width, height, outputPath)

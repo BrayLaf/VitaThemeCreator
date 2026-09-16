@@ -10,6 +10,7 @@ import {
   type IconSlotKey,
   type IconGenerationChoice,
   type NotificationIconImageSlot,
+  type PageIndicatorImageSlot,
   type PageProject,
   type ThemeProject,
   type Tuple10
@@ -24,6 +25,14 @@ function emptyNotificationIcons(): NotificationIconImageSlot {
   return {
     noNotice: { sourcePath: null, crop: { ...DEFAULT_IMAGE_CROP } },
     newNotice: { sourcePath: null, crop: { ...DEFAULT_IMAGE_CROP } }
+  }
+}
+
+/** Unset falls back to the bundled basePage.png/curPage.png at build time — see the `PageIndicatorImageSlot` DECISION note, imageSlots.ts. */
+function emptyPageIndicator(): PageIndicatorImageSlot {
+  return {
+    basePage: { sourcePath: null },
+    curPage: { sourcePath: null }
   }
 }
 
@@ -78,9 +87,13 @@ export function createEmptyThemeProject(): ThemeProject {
     lockscreenImage: emptyCroppableImageSlot(),
     pages: emptyPages(),
     notificationIcons: emptyNotificationIcons(),
+    pageIndicator: emptyPageIndicator(),
     iconSet: emptyIconSet(),
     audio: { kind: 'default-bundled', sourcePath: null },
     packageThumbnail: { mode: 'auto-collage', customImage: null },
-    previewScreenshots: { source: 'generated' }
+    previewScreenshots: {
+      lockscreen: { source: 'generated', customImage: null },
+      homePage: { source: 'generated', customImage: null }
+    }
   }
 }

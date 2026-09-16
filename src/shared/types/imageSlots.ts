@@ -150,24 +150,67 @@ export interface PackageThumbnailSources {
 
 // ---------------------------------------------------------------------------
 // VitaShell live-preview screenshots — preview_lockscreen.png, preview_page.png.
-// 480×272 forced stretch, or captured directly from a mounted Vita's
-// picture/screenshot folder ("Extra Tools" flow). Source ref: Theme.py:2293-2296,
-// Theme.py:1304-1311, Theme.py:2017-2031.
+// 480×272 forced stretch. Each of the two images independently defaults to
+// this app's own generated stand-in, or can be overridden with a
+// user-uploaded custom image, or (not yet implemented) captured directly
+// from a mounted Vita's picture/screenshot folder.
+//
+// The independent-per-image custom-image override is real ported behavior,
+// not an addition: Theme.py's "Extra Tools" export screen (`EXTRA_TOOLS`,
+// Theme.py:1297-1386) defaults `File1`/`File2` to the last two on-device
+// snapshots, but its `-LSPRE-`/`-LAPRE-` `FileBrowse` elements
+// (Theme.py:1358-1361) let the user independently swap in *any* image file
+// for either slot before it gets scaled 480×272 and shipped — there is no
+// requirement that the override actually be a real device screenshot.
+// Source ref: Theme.py:1297-1386 (custom override), Theme.py:2293-2296
+// (the "generated" bake-in path used when the user never opens Extra
+// Tools), Theme.py:2017-2031 (device-capture detection).
 //
 // TODO(report §8 discard list): the Windows drive-letter scanning used to find
 // a mounted Vita is Windows-only and needs a from-scratch cross-platform
 // design (e.g. `drivelist`) — not something to port line-for-line. This type
 // only models the resulting state, not the detection mechanism.
 // ---------------------------------------------------------------------------
-export type PreviewScreenshotSource = 'generated' | 'captured-from-device'
+export type PreviewImageSource = 'generated' | 'custom-image' | 'captured-from-device'
+
+export interface PreviewImageSlot {
+  source: PreviewImageSource
+  /** Only meaningful when source === 'custom-image'. */
+  customImage: ImageSourceRef | null
+}
 
 export interface PreviewScreenshotSlot {
-  source: PreviewScreenshotSource
+  lockscreen: PreviewImageSlot
+  homePage: PreviewImageSlot
+}
+
+// ---------------------------------------------------------------------------
+// Page indicator dots — basePage.png (unselected page) / curPage.png
+// (current page), 22×22 each, shown in the LiveArea's page-dot strip.
+//
+// DECISION (2026-09-15): the original tool has no UI to customize these —
+// Theme.py always copies its own bundled `assets/preview/default/base.png`/
+// `curs.png` verbatim at export time (Theme.py:2651-2652) and nothing in
+// its PySimpleGUI layout ever references a "page indicator" picker. This is
+// a deliberate feature this app adds on top of the original, not a ported
+// behavior: the Vita firmware itself just renders whatever 22×22 PNGs
+// `theme.xml`'s `m_basePageFilePath`/`m_curPageFilePath` point at, so a
+// custom pair is a legitimate on-device customization — one Theme.py's own
+// UI simply never exposed. Forced-stretch only, no crop/zoom UI — a 22×22
+// dot is too small for that editor to be worth the added complexity. Falls
+// back to the bundled default asset when left unset, reproducing the
+// original's always-shipped-something behavior (`BASE_PAGE_ASSET_PATH`/
+// `CUR_PAGE_ASSET_PATH`, resourcePaths.ts; see `packaging.ts`).
+// ---------------------------------------------------------------------------
+export interface PageIndicatorImageSlot {
+  /** The dot shown for every page other than the currently selected one. */
+  basePage: ImageSourceRef
+  /** The dot shown for the currently selected page. */
+  curPage: ImageSourceRef
 }
 
 // ---------------------------------------------------------------------------
 // Static, non-editable assets copied verbatim into every theme package.
-// basePage.png / curPage.png, 22×22, from assets/preview/default/{base,curs}.png.
 // Source ref: §6 packaging table. No user-facing slot — listed for completeness
 // of the export contract (see export.ts).
 // ---------------------------------------------------------------------------
@@ -221,6 +264,10 @@ export const IMAGE_SPECS = {
   },
   previewScreenshot: {
     dimensions: { width: 480, height: 272 } satisfies PixelDimensions,
+    fit: 'forced-stretch' as ResizeFit
+  },
+  pageIndicator: {
+    dimensions: { width: 22, height: 22 } satisfies PixelDimensions,
     fit: 'forced-stretch' as ResizeFit
   },
   staticAsset: {
