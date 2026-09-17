@@ -1,9 +1,11 @@
 import { app, shell, BrowserWindow, protocol, net } from 'electron'
+import { mkdirSync } from 'fs'
 import { join } from 'path'
 import { pathToFileURL } from 'url'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import { registerIpcHandlers } from './ipc'
+import { initAssetsRoot } from './resourcePaths'
 
 // In dev the renderer is served from ELECTRON_RENDERER_URL (http://localhost),
 // and Chromium refuses to load plain file:// resources into a non-file-origin
@@ -71,6 +73,18 @@ app.whenReady().then(() => {
     optimizer.watchWindowShortcuts(window)
   })
 
+  // DECISION (2026-09-17): the renderer's build-output roots ('Created Themes',
+  // 'Exported', 'Icon Sets') are cwd-relative, which is the repo root under
+  // `npm run dev`. A packaged app's cwd is whatever launched it — `/` for a
+  // Finder launch (read-only), `$HOME` or the AppImage's folder on Linux — so
+  // packaged builds pin cwd to a dedicated Documents subfolder instead.
+  if (app.isPackaged) {
+    const outputRoot = join(app.getPath('documents'), 'Vita Theme Creator')
+    mkdirSync(outputRoot, { recursive: true })
+    process.chdir(outputRoot)
+  }
+
+  initAssetsRoot(app)
   registerIpcHandlers()
 
   createWindow()

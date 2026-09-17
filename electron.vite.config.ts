@@ -8,6 +8,15 @@ export default defineConfig({
       alias: {
         '@shared': resolve('src/shared')
       }
+    },
+    build: {
+      rollupOptions: {
+        input: {
+          index: resolve('src/main/index.ts'),
+          // Forked child process for sharp work — see src/main/imageWorker/index.ts.
+          imageWorker: resolve('src/main/imageWorker/worker.ts')
+        }
+      }
     }
   },
   preload: {

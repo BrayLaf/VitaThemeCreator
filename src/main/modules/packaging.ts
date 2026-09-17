@@ -31,9 +31,9 @@ import {
   convertPageIndicatorImage,
   generateLockscreenPreviewScreenshot,
   generatePackageThumbnail,
-  generatePreviewScreenshot
-} from './imageConversion'
-import { compositeSystemIcon } from './iconGeneration'
+  generatePreviewScreenshot,
+  compositeSystemIcon
+} from '../imageWorker'
 import { convertAudioTrack } from './audioConversion'
 import { generateManifest, serializeManifestXml } from './manifestGeneration'
 import { saveThemeProject } from './projectPersistence'

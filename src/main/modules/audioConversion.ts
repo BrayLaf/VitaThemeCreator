@@ -39,7 +39,10 @@ import { AT9TOOL_PATH, DEFAULT_AUDIO_TRACK_PATH } from '../resourcePaths'
 const execFileAsync = promisify(execFile)
 
 if (ffmpegStaticPath) {
-  ffmpeg.setFfmpegPath(ffmpegStaticPath)
+  // In a packaged build ffmpeg-static resolves its binary inside app.asar,
+  // which can't be spawned — electron-builder.yml's asarUnpack puts the real
+  // file under app.asar.unpacked instead.
+  ffmpeg.setFfmpegPath(ffmpegStaticPath.replace('app.asar', 'app.asar.unpacked'))
 }
 
 // --- .at9 header validation (byte-exact port of BgmChecker.bgmFileCheck) ---
@@ -124,7 +127,7 @@ async function runAt9Tool(args: string[]): Promise<void> {
       throw new Error(
         'ATRAC9 encoding requires Wine on macOS/Linux to run the bundled Windows-only ' +
           'at9tool.exe SDK binary (no native ATRAC9 encoder exists on any platform). ' +
-          'Install Wine (e.g. `brew install --cask wine-stable`) or run this app on Windows.'
+          `Install Wine (e.g. ${process.platform === 'darwin' ? '`brew install --cask wine-stable`' : "your distro's `wine` package"}) or run this app on Windows.`
       )
     }
     throw new Error(`at9tool.exe failed: ${err.message}`)

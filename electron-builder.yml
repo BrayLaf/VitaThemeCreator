@@ -17,6 +17,10 @@ asarUnpack:
   - resources/**
   - '**/*.node'
   - node_modules/ffmpeg-static/**
+  # sharp's .node binding loads libvips from a sibling @img package by
+  # relative path, so the whole @img tree has to live outside the asar.
+  - node_modules/sharp/**
+  - node_modules/@img/**
 win:
   executableName: vita-theme-creator
 nsis:
@@ -37,12 +41,16 @@ dmg:
 linux:
   target:
     - AppImage
-    - snap
     - deb
-  maintainer: electronjs.org
-  category: Utility
+  executableName: vita-theme-creator
+  syncDesktopName: true
+  maintainer: BrayLaf <150001789+BrayLaf@users.noreply.github.com>
+  synopsis: PS Vita custom theme creator
+  category: Graphics
 appImage:
-  artifactName: ${name}-${version}.${ext}
+  artifactName: ${name}-${version}-${arch}.${ext}
+deb:
+  artifactName: ${name}-${version}-${arch}.${ext}
 npmRebuild: false
 publish:
   provider: generic
