@@ -1,6 +1,6 @@
 {
   "name": "vita-theme-creator",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "PS Vita custom theme creator - TypeScript/React/Electron reimplementation of ThemeBUILDER",
   "main": "./out/main/index.js",
   "author": "",
