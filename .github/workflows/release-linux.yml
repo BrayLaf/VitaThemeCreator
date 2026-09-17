@@ -1,0 +1,47 @@
+name: Linux release
+
+# Builds the AppImage + .deb on Ubuntu (sharp and ffmpeg-static ship
+# per-platform binaries, so this can't be cross-built from macOS) and
+# attaches them to the GitHub release for the pushed tag. A manual run only
+# builds and uploads the binaries as a workflow artifact, for testing.
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run lint
+
+      - run: npm run build:linux
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-${{ github.sha }}
+          path: |
+            dist/*.AppImage
+            dist/*.deb
+
+      - name: Attach to release
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          TAG: ${{ github.ref_name }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --title "$TAG" --notes ""
+          gh release upload "$TAG" dist/*.AppImage dist/*.deb --clobber

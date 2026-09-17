@@ -12,9 +12,10 @@ import {
   convertPageBackground,
   generateLockscreenPreviewScreenshot,
   generatePackageThumbnail,
-  generatePreviewScreenshot
-} from './modules/imageConversion'
-import { compositeSystemIcon, generateIconSet } from './modules/iconGeneration'
+  generatePreviewScreenshot,
+  compositeSystemIcon,
+  generateIconSet
+} from './imageWorker'
 import { convertAudioTrack } from './modules/audioConversion'
 import { generateManifest, serializeManifestXml } from './modules/manifestGeneration'
 import { buildThemeFolder, packageTheme } from './modules/packaging'

@@ -11,13 +11,26 @@
  * live outside the asar archive since `at9tool.exe` is spawned as a real
  * subprocess and asar-packed binaries can't be executed directly.
  */
-import { app } from 'electron'
+import type { App } from 'electron'
 import { join } from 'path'
 
-function assetsRoot(): string {
-  return app.isPackaged
+// Type-only Electron import: this module is also bundled into the image
+// worker (imageWorker/index.ts), which runs as plain Node where
+// `require('electron')` doesn't resolve. The worker gets its root from the
+// env var instead of `initAssetsRoot`.
+export const ASSETS_ROOT_ENV = 'VITA_THEME_ASSETS_ROOT'
+let resolvedAssetsRoot: string | null = process.env[ASSETS_ROOT_ENV] || null
+
+/** Called once from the main process entry point (index.ts) before anything resolves an asset path. */
+export function initAssetsRoot(app: Pick<App, 'isPackaged' | 'getAppPath'>): void {
+  resolvedAssetsRoot = app.isPackaged
     ? join(process.resourcesPath, 'themebuilder-assets')
     : join(app.getAppPath(), 'resources', 'themebuilder-assets')
+}
+
+function assetsRoot(): string {
+  if (!resolvedAssetsRoot) throw new Error('resourcePaths used before initAssetsRoot()')
+  return resolvedAssetsRoot
 }
 
 export function themebuilderAssetPath(...segments: string[]): string {

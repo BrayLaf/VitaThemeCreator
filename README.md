@@ -109,8 +109,25 @@ from the repository to see the app's output on a real Vita.
 
 ## Getting started
 
+### Linux
+
+Download the `.AppImage` or `.deb` from the
+[latest release](https://github.com/BrayLaf/VitaThemeCreator/releases/latest):
+
+```bash
+chmod +x vita-theme-creator-*-x86_64.AppImage && ./vita-theme-creator-*-x86_64.AppImage
+# or
+sudo apt install ./vita-theme-creator-*-amd64.deb
+```
+
+The packaged app saves themes, zips, and icon sets under
+`~/Documents/Vita Theme Creator/`.
+
+### macOS and Windows (from source)
+
 > [!NOTE]
-> No prebuilt binaries are published yet, so run the app from source.
+> macOS and Windows builds need code signing, so no binaries are published
+> for them yet. Run the app from source instead.
 
 **Requirements:** [Node.js](https://nodejs.org) 22 or newer. To encode WAV/MP3
 audio on macOS or Linux, you also need [Wine](https://www.winehq.org) (see
@@ -135,8 +152,12 @@ npm run dev
 | `npm run build:win`   | Package a Windows installer                           |
 | `npm run build:linux` | Package a Linux app                                   |
 
-Built themes go to `Created Themes/`, exported zips to `Exported/`, and icon
-sets to `Icon Sets/`. All three folders are gitignored.
+When run from source, built themes go to `Created Themes/`, exported zips to
+`Exported/`, and icon sets to `Icon Sets/`. All three folders are gitignored.
+
+Pushing a `v*` tag runs the [Linux release workflow](.github/workflows/release-linux.yml),
+which builds the AppImage and `.deb` on Ubuntu and attaches them to that tag's
+GitHub release.
 
 ### Audio encoding
 
@@ -174,19 +195,19 @@ conventions the codebase follows.
 
 <br>
 
-| Path | Purpose |
-| --- | --- |
-| `src/shared/types/` | The `ThemeProject` data model and `theme.xml` manifest shape, shared by all processes |
-| `src/shared/ipc.ts` | Typed contract between the renderer and main process |
-| `src/main/modules/` | Conversion and build logic: images, audio, icons, manifest, packaging, persistence, theme library |
-| `src/main/resourcePaths.ts` | Finds bundled assets in dev and packaged builds, including default fallback images |
-| `src/main/index.ts` | App entry, plus the `themefile://` protocol used to show local images in the UI |
-| `src/preload/` | Exposes the IPC contract as `window.api` |
-| `src/renderer/src/components/` | Pages (landing, editor, icon-set creator, library), editor panels, and the device preview |
-| `src/renderer/src/components/common/` | Shared UI pieces: the image cropper, icon tiles, color swatches, file dropzones |
-| `src/renderer/src/lib/` | Renderer helpers, including the crop math shared with the export pipeline |
-| `src/renderer/src/state/` | React context and update actions for the open theme project |
-| `resources/themebuilder-assets/` | Icon art, masks, default images and audio, and `at9tool.exe`, ported from ThemeBUILDER |
+| Path                                  | Purpose                                                                                           |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| `src/shared/types/`                   | The `ThemeProject` data model and `theme.xml` manifest shape, shared by all processes             |
+| `src/shared/ipc.ts`                   | Typed contract between the renderer and main process                                              |
+| `src/main/modules/`                   | Conversion and build logic: images, audio, icons, manifest, packaging, persistence, theme library |
+| `src/main/resourcePaths.ts`           | Finds bundled assets in dev and packaged builds, including default fallback images                |
+| `src/main/index.ts`                   | App entry, plus the `themefile://` protocol used to show local images in the UI                   |
+| `src/preload/`                        | Exposes the IPC contract as `window.api`                                                          |
+| `src/renderer/src/components/`        | Pages (landing, editor, icon-set creator, library), editor panels, and the device preview         |
+| `src/renderer/src/components/common/` | Shared UI pieces: the image cropper, icon tiles, color swatches, file dropzones                   |
+| `src/renderer/src/lib/`               | Renderer helpers, including the crop math shared with the export pipeline                         |
+| `src/renderer/src/state/`             | React context and update actions for the open theme project                                       |
+| `resources/themebuilder-assets/`      | Icon art, masks, default images and audio, and `at9tool.exe`, ported from ThemeBUILDER            |
 
 </details>
 

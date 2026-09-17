@@ -53,6 +53,16 @@ per-slot PNGs) against what this app produces before touching any code.
   a packaged build. Never hardcode a path into these assets elsewhere. Also
   exports the `DEFAULT_*_PATH` fallbacks (lockscreen, notification icons,
   page background) — see "No missing-asset export failures" below.
+  `initAssetsRoot(app)` (called from `index.ts`) sets the root. The module
+  imports Electron as a type only, so the image worker can load it.
+- `src/main/imageWorker/` — every `sharp`-backed function
+  (`imageConversion`, `iconGeneration`), exposed with its normal signature.
+  **Main-process callers import these from `imageWorker`, never from the
+  modules directly.** On Linux they run in a forked `ELECTRON_RUN_AS_NODE`
+  child process, because sharp's libvips GLib clashes with Electron's and
+  crashes the main process (electron/electron#46323). Any new sharp function
+  goes in `imageOps.ts`'s table. Neither module can import Electron at
+  runtime. Set `VITA_THEME_IMAGE_WORKER=1` to test the worker path on macOS.
 - `src/main/index.ts` registers a privileged `themefile://` protocol
   (`protocol.handle`) that every renderer `<img>`/`background-image` loading
   a real filesystem path goes through via `toFileUrl()`
@@ -196,6 +206,18 @@ npm run dev             # electron-vite dev, HMR renderer
 Always run `typecheck` + `lint` + `build` after a change before considering
 it done — all three are fast and catch real issues (path-alias drift,
 cross-process type mismatches).
+
+## Releases
+
+Only Linux ships binaries, because macOS and Windows need paid signing
+certificates. Pushing a `v*` tag runs `.github/workflows/release-linux.yml`,
+which builds the AppImage and `.deb` on Ubuntu and attaches them to that tag's
+release. Don't cross-build Linux from macOS: `sharp` and `ffmpeg-static`
+install binaries for the host platform, so the result would ship macOS
+binaries. To test locally, build inside a `node:22` Docker container.
+Packaged builds change their working directory to
+`~/Documents/Vita Theme Creator/` (`index.ts`), so the relative `Created
+Themes`/`Exported`/`Icon Sets` roots land there.
 
 ## Verifying a running app
 
