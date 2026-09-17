@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="340" viewBox="0 0 1280 340" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="340" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0B2544"/>
+      <stop offset="1" stop-color="#061428"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="640" cy="92" r="360" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#00D2FF" stop-opacity="0.22"/>
+      <stop offset="1" stop-color="#00D2FF" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="wave" x1="0" y1="0" x2="1280" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#00D2FF" stop-opacity="0"/>
+      <stop offset="0.5" stop-color="#00D2FF" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#00D2FF" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="markGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="6" result="b"/>
+      <feColorMatrix in="b" values="0 0 0 0 0  0 0 0 0 0.82  0 0 0 0 1  0 0 0 0.55 0"/>
+      <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <clipPath id="card"><rect width="1280" height="340" rx="28"/></clipPath>
+  </defs>
+
+  <g clip-path="url(#card)">
+    <rect width="1280" height="340" fill="url(#bg)"/>
+    <rect width="1280" height="340" fill="url(#glow)"/>
+    <g transform="translate(0 14)">
+    <path d="M0 292c110 0 150-46 270-46s160 46 270 46 150-46 270-46 160 46 270 46 130-30 200-30" stroke="url(#wave)" stroke-width="2"/>
+    <path d="M0 312c130 0 170-34 300-34s170 34 300 34 170-34 300-34 170 34 300 34 80-14 80-14" stroke="url(#wave)" stroke-width="1.5" opacity="0.6"/>
+    </g>
+
+    <g transform="translate(592 34) scale(2)" filter="url(#markGlow)">
+      <rect x="3" y="11" width="42" height="26" rx="9" stroke="#F8F9FA" stroke-width="2.8"/>
+      <path d="M7 30c4.5 0 6-7 11-7s6.5 7 11 7 5.5-4 8-4" stroke="#00D2FF" stroke-width="2.8" stroke-linecap="round"/>
+      <circle cx="12" cy="18" r="2.6" fill="#00D2FF"/>
+    </g>
+
+    <text x="640" y="196" text-anchor="middle" fill="#F8F9FA" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, Helvetica, Arial, sans-serif" font-size="60" font-weight="700" letter-spacing="-1">Vita Theme Creator</text>
+    <text x="640" y="244" text-anchor="middle" fill="#8FA6C4" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, Helvetica, Arial, sans-serif" font-size="24">Build custom PS Vita home-screen themes on macOS, Windows, and Linux</text>
+  </g>
+</svg>
