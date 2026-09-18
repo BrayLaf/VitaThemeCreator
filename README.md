@@ -123,6 +123,14 @@ sudo apt install ./vita-theme-creator-*-amd64.deb
 The packaged app saves themes, zips, and icon sets under
 `~/Documents/Vita Theme Creator/`.
 
+Every release also carries a copy of each file with the version stripped out,
+so these links always download the newest build and never need updating:
+
+```
+https://github.com/BrayLaf/VitaThemeCreator/releases/latest/download/vita-theme-creator-x86_64.AppImage
+https://github.com/BrayLaf/VitaThemeCreator/releases/latest/download/vita-theme-creator-amd64.deb
+```
+
 ### macOS and Windows (from source)
 
 > [!NOTE]
