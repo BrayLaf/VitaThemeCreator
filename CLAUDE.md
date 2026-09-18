@@ -212,9 +212,16 @@ cross-process type mismatches).
 Only Linux ships binaries, because macOS and Windows need paid signing
 certificates. Pushing a `v*` tag runs `.github/workflows/release-linux.yml`,
 which builds the AppImage and `.deb` on Ubuntu and attaches them to that tag's
-release. Don't cross-build Linux from macOS: `sharp` and `ffmpeg-static`
-install binaries for the host platform, so the result would ship macOS
-binaries. To test locally, build inside a `node:22` Docker container.
+release. Each one is uploaded twice: under its versioned filename, and again
+with the version stripped out (`vita-theme-creator-x86_64.AppImage`), so
+`/releases/latest/download/<stable name>` stays a working download link for
+the portfolio site's download button. Keep both uploads when changing that
+step — dropping the stable-named copy silently breaks those links.
+
+Don't cross-build Linux from macOS: `sharp` and `ffmpeg-static` install
+binaries for the host platform, so the result would ship macOS binaries. To
+test locally, build inside a `node:22` Docker container.
+
 Packaged builds change their working directory to
 `~/Documents/Vita Theme Creator/` (`index.ts`), so the relative `Created
 Themes`/`Exported`/`Icon Sets` roots land there.
