@@ -2,6 +2,8 @@
   <img src="docs/media/banner.svg" alt="Vita Theme Creator" width="100%">
 </p>
 
+<h1 align="center">Vita Theme Creator</h1>
+
 <p align="center">
   <a href="https://github.com/BrayLaf/VitaThemeCreator/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/BrayLaf/VitaThemeCreator?color=00d2ff&labelColor=061428&style=flat-square"></a>
   <img alt="Platforms" src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-0056b3?labelColor=061428&style=flat-square">
@@ -17,7 +19,8 @@
   <a href="#getting-started">Getting started</a> ·
   <a href="#how-accurate-is-it">Accuracy</a> ·
   <a href="#project-structure">Project structure</a> ·
-  <a href="#credits">Credits</a>
+  <a href="#credits">Credits</a> ·
+  <a href="#license">License</a>
 </p>
 
 ---
@@ -226,6 +229,13 @@ conventions the codebase follows.
 - [**LiEnby/Sony-ThemeTool**](https://github.com/LiEnby/Sony-ThemeTool), a
   decompile of Sony's official ThemeTool. The app's `.at9` header validation is
   a byte-exact port of its `BgmChecker.cs` and related chunk parsers.
+
+## License
+
+The app's own source code is [MIT](LICENSE). The assets under
+`resources/themebuilder-assets/` are not covered by that license: the icon
+art, masks, default images and audio come from ThemeBUILDER and belong to its
+author, and `at9tool.exe` is Sony's ATRAC9 encoder.
 
 <sub>Demo themes feature fan art of Marvel's Magik and Naruto's Sasuke. All
 characters belong to their respective owners.</sub>
